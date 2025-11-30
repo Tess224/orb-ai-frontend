@@ -19,7 +19,7 @@ import {
   getPrivacyAnalysis 
 } from './api';
 import { HashRouter, Routes, Route, Link, useNavigate, useSearchParams } from 'react-router-dom';
-
+import { PrivyProvider } from './PrivyProvider';
 // ============================================
 // CACHE SYSTEM
 // ============================================
