@@ -27,6 +27,29 @@ export function PrivyWallet() {
     // Privy can support multiple chains, so we filter for Solana specifically
     const solanaWallet = wallets.find((wallet) => wallet.walletClientType === 'privy' && wallet.chainType === 'solana');
 
+============================================
+    // ✅ NEW CODE: FORCE SOLANA WALLET CREATION
+    // ============================================
+    useEffect(() => {
+        // If the user is logged in, the SDK is ready, but NO Solana wallet exists...
+        if (ready && authenticated && !solanaWallet) {
+            console.log("User has no Solana wallet. Creating one now...");
+            
+            // Force create a Solana wallet
+            createWallet({ chainType: 'solana' })
+                .then((wallet) => {
+                    console.log("Solana wallet created successfully:", wallet);
+                    // The UI will auto-update because 'wallets' hook will trigger a re-render
+                })
+                .catch((error) => {
+                    console.error("Failed to create Solana wallet:", error);
+                });
+        }
+    }, [ready, authenticated, solanaWallet, createWallet]);
+    // ============================================
+    // END NEW CODE
+    // ============================================
+
     // Fetch balance whenever the wallet address changes
     useEffect(() => {
         if (solanaWallet?.address) {
