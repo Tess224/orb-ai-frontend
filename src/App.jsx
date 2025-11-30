@@ -20,6 +20,7 @@ import {
 } from './api';
 import { HashRouter, Routes, Route, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { PrivyProvider } from './PrivyProvider';
+import { PrivyWallet } from './PrivyWallet';
 // ============================================
 // CACHE SYSTEM
 // ============================================
