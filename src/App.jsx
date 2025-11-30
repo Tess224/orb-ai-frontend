@@ -407,6 +407,8 @@ function Terminal() {
                   />
                 </button>
               </div>
+
+              <PrivyWallet />
               
               <div className="flex gap-2 border border-green-400/30 rounded p-1">
                 <Link to="/" className="px-3 py-1 bg-green-400 text-black text-sm font-bold rounded">
