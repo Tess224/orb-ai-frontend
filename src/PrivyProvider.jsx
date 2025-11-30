@@ -2,12 +2,13 @@ import { PrivyProvider as PrivyProviderBase } from '@privy-io/react-auth';
 import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana';
 
 export function PrivyProvider({ children }) {
+    // Enable external wallets like Phantom
     const solanaConnectors = toSolanaWalletConnectors({ shouldAutoConnect: true });
 
     return (
         <PrivyProviderBase
-            // ⬇️ PASTE YOUR NEW APP ID HERE ⬇️
-            appId="cmiloes5y05x2jo0cs4hxx7du"
+            // 🚨 PASTE YOUR NEW APP ID HERE 🚨
+            appId="cmils4y2e01cak10b4nf2n7qn"
             
             config={{
                 appearance: {
@@ -17,9 +18,11 @@ export function PrivyProvider({ children }) {
                 },
                 loginMethods: ['email', 'google'],
                 embeddedWallets: {
-                    // We trust the dashboard to auto-create now
+                    // 🛑 DOCS RECOMMENDATION: Turn this OFF to prevent EVM bias
+                    createOnLogin: 'off', 
                     requireUserPasswordOnCreate: false,
                 },
+                // ✅ This configures the app for Solana
                 solanaClusters: [
                     {
                         name: 'mainnet-beta', 
