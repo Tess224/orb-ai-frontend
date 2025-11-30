@@ -2,13 +2,13 @@ import { PrivyProvider as PrivyProviderBase } from '@privy-io/react-auth';
 import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana';
 
 export function PrivyProvider({ children }) {
-    const solanaConnectors = toSolanaWalletConnectors({
-        shouldAutoConnect: true,
-    });
+    const solanaConnectors = toSolanaWalletConnectors({ shouldAutoConnect: true });
 
     return (
         <PrivyProviderBase
-            appId="cmil941rp018sl20c3inef3pb"
+            // ⬇️ PASTE YOUR NEW APP ID HERE ⬇️
+            appId="cmiloes5y05x2jo0cs4hxx7du"
+            
             config={{
                 appearance: {
                     theme: 'dark',
@@ -17,10 +17,7 @@ export function PrivyProvider({ children }) {
                 },
                 loginMethods: ['email', 'google'],
                 embeddedWallets: {
-                    // --------------------------------------------------------
-                    // 🛑 CRITICAL CHANGE: We REMOVED 'createOnLogin'
-                    // This stops the app from auto-creating the wrong (EVM) wallet
-                    // --------------------------------------------------------
+                    // We trust the dashboard to auto-create now
                     requireUserPasswordOnCreate: false,
                 },
                 solanaClusters: [
