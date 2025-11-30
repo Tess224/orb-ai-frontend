@@ -6,7 +6,7 @@ export function PrivyProvider({ children }) {
 
     return (
         <PrivyProviderBase
-            // Use your NEW App ID
+            // Use your App ID
             appId="cmils4y2e01cak10b4nf2n7qn"
             
             config={{
@@ -15,21 +15,17 @@ export function PrivyProvider({ children }) {
                     accentColor: '#4ade80',
                     walletChainType: 'solana-only',
                 },
-                loginMethods: ['email', 'google'],
+                // Allow Email + External Wallets (Phantom)
+                loginMethods: ['email', 'wallet'], 
+                
                 embeddedWallets: {
-                    // 🛑 THIS IS THE FIX 🛑
-                    // We turn this OFF so no Ethereum wallet is auto-created.
-                    // We will create the Solana wallet manually in the next file.
+                    // 🛑 PERMANENTLY OFF. 
+                    // Privy will NOT create wallets. We will do it ourselves.
                     createOnLogin: 'off', 
-                    requireUserPasswordOnCreate: false,
                 },
-                solanaClusters: [{ 
-                    name: 'mainnet-beta', 
-                    rpcUrl: 'https://api.mainnet-beta.solana.com' 
-                }],
-                externalWallets: { 
-                    solana: { connectors: solanaConnectors } 
-                },
+                
+                solanaClusters: [{ name: 'mainnet-beta', rpcUrl: 'https://api.mainnet-beta.solana.com' }],
+                externalWallets: { solana: { connectors: solanaConnectors } },
             }}
         >
             {children}
