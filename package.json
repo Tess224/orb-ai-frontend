@@ -13,7 +13,9 @@
     "lucide-react": "^0.363.0",
     "react-router-dom": "^6.22.3",
     "@solana/web3.js": "^1.91.4",
-    "@privy-io/react-auth": "^1.88.4"
+    "@privy-io/react-auth": "^1.88.4",
+    "bs58": "^5.0.0"
+
   },
   "devDependencies": {
     "@types/react": "^18.2.66",
