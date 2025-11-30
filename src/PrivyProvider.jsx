@@ -2,12 +2,11 @@ import { PrivyProvider as PrivyProviderBase } from '@privy-io/react-auth';
 import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana';
 
 export function PrivyProvider({ children }) {
-    // Enable external wallets like Phantom
     const solanaConnectors = toSolanaWalletConnectors({ shouldAutoConnect: true });
 
     return (
         <PrivyProviderBase
-            // 🚨 PASTE YOUR NEW APP ID HERE 🚨
+            // Use your "Orb Solana V2" App ID
             appId="cmils4y2e01cak10b4nf2n7qn"
             
             config={{
@@ -17,22 +16,27 @@ export function PrivyProvider({ children }) {
                     walletChainType: 'solana-only',
                 },
                 loginMethods: ['email', 'google'],
+                
+                // 👇 THIS IS THE FIX 👇
                 embeddedWallets: {
-                    // 🛑 DOCS RECOMMENDATION: Turn this OFF to prevent EVM bias
-                    createOnLogin: 'off', 
+                    // 1. Explicitly DISABLE Ethereum creation
+                    ethereum: {
+                        createOnLogin: 'off', 
+                    },
+                    // 2. Explicitly ENABLE Solana creation
+                    solana: {
+                        createOnLogin: 'users-without-wallets',
+                    },
                     requireUserPasswordOnCreate: false,
                 },
-                // ✅ This configures the app for Solana
-                solanaClusters: [
-                    {
-                        name: 'mainnet-beta', 
-                        rpcUrl: 'https://api.mainnet-beta.solana.com'
-                    }
-                ],
+                // 👆 END OF FIX 👆
+
+                solanaClusters: [{ 
+                    name: 'mainnet-beta', 
+                    rpcUrl: 'https://api.mainnet-beta.solana.com' 
+                }],
                 externalWallets: { 
-                    solana: { 
-                        connectors: solanaConnectors 
-                    } 
+                    solana: { connectors: solanaConnectors } 
                 },
             }}
         >
