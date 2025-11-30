@@ -13,10 +13,14 @@ export function PrivyProvider({ children }) {
                 appearance: {
                     theme: 'dark',
                     accentColor: '#4ade80',
-                    walletChainType: 'solana-only', 
+                    walletChainType: 'solana-only',
                 },
                 loginMethods: ['email', 'google'],
                 embeddedWallets: {
+                    // --------------------------------------------------------
+                    // 🛑 CRITICAL CHANGE: We REMOVED 'createOnLogin'
+                    // This stops the app from auto-creating the wrong (EVM) wallet
+                    // --------------------------------------------------------
                     requireUserPasswordOnCreate: false,
                 },
                 solanaClusters: [
