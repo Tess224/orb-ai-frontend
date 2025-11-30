@@ -6,7 +6,9 @@ import bs58 from 'bs58';
 
 // 🛑 CHANGED: Using Public RPC instead of your Proxy to guarantee data access
 // 'confirmed' means we see the balance faster (don't have to wait for full finalization)
-const CONNECTION = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+// Ankr is much more reliable for Vercel/Web apps than the default one
+const CONNECTION = new Connection('https://rpc.ankr.com/solana', 'confirmed');
+
 
 export function PrivyWallet() {
     const { authenticated, login, logout } = usePrivy();
