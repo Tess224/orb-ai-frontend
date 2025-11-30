@@ -1,42 +1,45 @@
 import { PrivyProvider as PrivyProviderBase } from '@privy-io/react-auth';
 import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana';
 
-export function PrivyProvider({ children }) {
-    const solanaConnectors = toSolanaWalletConnectors({ shouldAutoConnect: true });
+// 1. Get the Solana connectors (Phantom, Solflare, etc.)
+const solanaConnectors = toSolanaWalletConnectors();
 
+export function PrivyProvider({ children }) {
     return (
         <PrivyProviderBase
-            // Use your "Orb Solana V2" App ID
             appId="cmils4y2e01cak10b4nf2n7qn"
-            
             config={{
+                // 2. UI: Force the interface to look like a Solana app
                 appearance: {
                     theme: 'dark',
                     accentColor: '#4ade80',
-                    walletChainType: 'solana-only',
+                    walletChainType: 'solana-only', 
+                    showWalletLoginFirst: true,
                 },
-                loginMethods: ['email', 'google'],
                 
-                // 👇 THIS IS THE FIX 👇
+                // 3. Login Options: Allow Email AND External Wallets
+                loginMethods: ['email', 'wallet'], 
+
+                // 4. Embedded Wallets (Crucial Fix):
+                // We turn OFF auto-creation to stop the "EVM Bias" bug.
+                // We will create the wallet manually in the next file.
                 embeddedWallets: {
-                    // 1. Explicitly DISABLE Ethereum creation
-                    ethereum: {
-                        createOnLogin: 'off', 
-                    },
-                    // 2. Explicitly ENABLE Solana creation
-                    solana: {
-                        createOnLogin: 'users-without-wallets',
-                    },
+                    createOnLogin: 'off', 
                     requireUserPasswordOnCreate: false,
                 },
-                // 👆 END OF FIX 👆
 
+                // 5. Network: Define Solana Mainnet
                 solanaClusters: [{ 
                     name: 'mainnet-beta', 
                     rpcUrl: 'https://api.mainnet-beta.solana.com' 
                 }],
+
+                // 6. External Wallets (Matches your Docs Link):
+                // This connects Phantom/Solflare to Privy.
                 externalWallets: { 
-                    solana: { connectors: solanaConnectors } 
+                    solana: { 
+                        connectors: solanaConnectors 
+                    } 
                 },
             }}
         >
