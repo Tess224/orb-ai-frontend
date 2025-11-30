@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
-import { Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { Wallet, Copy, RefreshCw, LogOut, Download, AlertTriangle, User } from 'lucide-react';
 
 // Use your existing backend proxy for Solana RPC calls
