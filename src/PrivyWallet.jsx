@@ -41,7 +41,7 @@ export function PrivyWallet() {
     const fetchBalance = async (address) => {
         try {
             setLoading(true);
-            const publicKey = new window.solanaWeb3.PublicKey(address);
+            const publicKey = new PublicKey(address);
             const bal = await CONNECTION.getBalance(publicKey);
             setBalance(bal / LAMPORTS_PER_SOL);
         } catch (e) {
