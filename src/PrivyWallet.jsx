@@ -1,43 +1,19 @@
 import { useState, useEffect } from 'react';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
-import { RefreshCw, LogOut, User } from 'lucide-react';
+import { Copy, RefreshCw, LogOut, User } from 'lucide-react';
 
-// Use your backend proxy
 const CONNECTION = new Connection('https://orbonsolana.up.railway.app/api/proxy/helius');
 
 export function PrivyWallet() {
-    // ✅ Import createWallet from usePrivy
-    const { ready, authenticated, login, logout, createWallet } = usePrivy();
+    const { ready, authenticated, login, logout } = usePrivy();
     const { wallets } = useWallets();
 
     const [balance, setBalance] = useState(0);
-    const [status, setStatus] = useState('');
-
+    
     // Find the Solana wallet
     const solanaWallet = wallets.find((w) => w.walletClientType === 'privy' && w.chainType === 'solana');
 
-    // ============================================================
-    // ⚡ MANUAL CREATION SCRIPT (Per Documentation)
-    // ============================================================
-    useEffect(() => {
-        // 1. User is logged in
-        // 2. User has ZERO wallets (because auto-create is OFF)
-        if (ready && authenticated && wallets.length === 0) {
-            setStatus('Creating Solana wallet...');
-            console.log("Force creating Solana wallet...");
-            
-            // 3. Create Solana wallet explicitly
-            createWallet({ chainType: 'solana' })
-                .then(() => setStatus('Success!'))
-                .catch((err) => {
-                    console.error(err);
-                    setStatus('Error creating wallet');
-                });
-        }
-    }, [ready, authenticated, wallets, createWallet]);
-
-    // Balance Fetcher
     useEffect(() => {
         if (solanaWallet?.address) {
             const fetch = async () => {
@@ -54,7 +30,7 @@ export function PrivyWallet() {
     const formatAddress = (addr) => addr ? `${addr.slice(0, 4)}...${addr.slice(-4)}` : '';
 
     if (!ready) return <div className="p-4 text-green-400">Loading auth...</div>;
-
+    
     if (!authenticated) {
         return (
             <button onClick={login} className="px-4 py-2 bg-green-400 text-black font-bold rounded">
@@ -63,17 +39,15 @@ export function PrivyWallet() {
         );
     }
 
-    // Show status while creating
     if (!solanaWallet?.address) {
         return (
             <div className="flex items-center gap-2 px-4 py-2 bg-yellow-400/20 border border-yellow-400/50 rounded">
                 <RefreshCw className="w-4 h-4 text-yellow-400 animate-spin" />
-                <span className="text-xs text-yellow-400">{status || "Initializing..."}</span>
+                <span className="text-xs text-yellow-400">Generating Solana wallet...</span>
             </div>
         );
     }
 
-    // Success View
     return (
         <div className="flex items-center gap-3 px-4 py-2 bg-black/80 border border-green-400/50 rounded">
             <span className="text-green-400 font-bold font-mono">{balance.toFixed(4)} SOL</span>
