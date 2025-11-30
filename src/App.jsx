@@ -1139,12 +1139,14 @@ function Marketplace() {
 
 function App() {
   return (
-    <HashRouter>
-      <Routes>
-        <Route path="/" element={<Terminal />} />
-        <Route path="/marketplace" element={<Marketplace />} />
-      </Routes>
-    </HashRouter>
+    <PrivyProvider>
+      <HashRouter>
+        <Routes>
+          <Route path="/" element={<Terminal />} />
+          <Route path="/marketplace" element={<Marketplace />} />
+        </Routes>
+      </HashRouter>
+    </PrivyProvider>
   );
 }
 
