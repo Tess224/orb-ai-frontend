@@ -27,7 +27,7 @@ export function PrivyWallet() {
     // Privy can support multiple chains, so we filter for Solana specifically
     const solanaWallet = wallets.find((wallet) => wallet.walletClientType === 'privy' && wallet.chainType === 'solana');
 
- ==========================================
+ 
     // ✅ NEW CODE: FORCE SOLANA WALLET CREATION
     // ============================================
     useEffect(() => {
