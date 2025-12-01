@@ -34,28 +34,54 @@ export function PrivyWallet() {
         }
     }, [authenticated]);
 
-    // 2. Fetch Balance
-    const fetchBalance = useCallback(async () => {
-        if (!localWallet?.publicKey) return;
-        if (!API_KEY) {
-            setErrorMsg("Missing API Key");
-            return;
-        }
+    // const fetchBalance = useCallback(async () => {
+    console.log("=== BALANCE FETCH DEBUG START ===");
+    
+    if (!localWallet?.publicKey) {
+        console.log("❌ No wallet public key available");
+        return;
+    }
+
+    console.log("✅ Wallet exists");
+    console.log("📍 Wallet address:", localWallet.publicKey.toString());
+    console.log("🔑 API_KEY exists?", !!API_KEY);
+    console.log("🔑 API_KEY value (first 10 chars):", API_KEY ? API_KEY.substring(0, 10) + "..." : "UNDEFINED");
+    console.log("🔗 Full RPC Endpoint:", RPC_ENDPOINT);
+
+    if (!API_KEY) {
+        console.error("❌ CRITICAL: API_KEY is undefined or empty");
+        setErrorMsg("Missing API Key");
+        return;
+    }
+
+    setLoading(true);
+    setErrorMsg('');
+
+    try {
+        console.log("🔌 Step 1: Creating Solana connection...");
+        const connection = new Connection(RPC_ENDPOINT, 'confirmed');
+        console.log("✅ Connection object created successfully");
         
-        setLoading(true);
-        setErrorMsg('');
+        console.log("📡 Step 2: Calling getBalance on the blockchain...");
+        const bal = await connection.getBalance(localWallet.publicKey);
         
-        try {
-            const connection = new Connection(RPC_ENDPOINT, 'confirmed');
-            const bal = await connection.getBalance(localWallet.publicKey);
-            setBalance(bal / LAMPORTS_PER_SOL);
-        } catch(e) { 
-            console.error("Fetch failed:", e);
-            setErrorMsg('Connection Error');
-        } finally {
-            setLoading(false);
-        }
-    }, [localWallet]);
+        console.log("✅ Balance received!");
+        console.log("💰 Raw balance (lamports):", bal);
+        console.log("💰 Converted balance (SOL):", bal / LAMPORTS_PER_SOL);
+        
+        setBalance(bal / LAMPORTS_PER_SOL);
+        console.log("=== BALANCE FETCH SUCCESS ===");
+    } catch(e) { 
+        console.error("❌ ERROR OCCURRED!");
+        console.error("Error type:", e.name);
+        console.error("Error message:", e.message);
+        console.error("Full error object:", e);
+        setErrorMsg(`Connection Error: ${e.message}`);
+        console.log("=== BALANCE FETCH FAILED ===");
+    } finally {
+        setLoading(false);
+    }
+}, [localWallet]);
 
     useEffect(() => {
         if (localWallet) fetchBalance();
