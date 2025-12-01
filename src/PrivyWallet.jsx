@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { Connection, LAMPORTS_PER_SOL, PublicKey, Keypair } from '@solana/web3.js';
-import { Copy, RefreshCw, LogOut, User, ExternalLink, Eye, EyeOff, Import, Plus, X } from 'lucide-react';
+import { Copy, RefreshCw, LogOut, User, ExternalLink, Eye, EyeOff } from 'lucide-react';
 import bs58 from 'bs58';
 
 // 🔒 SECURE CONNECTION
@@ -17,7 +17,6 @@ export function PrivyWallet() {
     const [showKey, setShowKey] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
     const [view, setView] = useState('home'); 
-    const [importInput, setImportInput] = useState('');
     const [debugLogs, setDebugLogs] = useState([]); 
 // ADD THIS FUNCTION HERE
     const addLog = (message) => {
@@ -43,7 +42,7 @@ export function PrivyWallet() {
 
       const fetchBalance = useCallback(async () => {
     addLog("=== BALANCE FETCH START ===");
-    
+
     if (!localWallet?.publicKey) {
         addLog("❌ No wallet public key available");
         return;
@@ -68,14 +67,14 @@ export function PrivyWallet() {
         addLog("🔌 Creating connection...");
         const connection = new Connection(RPC_ENDPOINT, 'confirmed');
         addLog("✅ Connection created");
-        
+
         addLog("📡 Calling getBalance...");
         const bal = await connection.getBalance(localWallet.publicKey);
-        
+
         addLog(`✅ Balance received!`);
         addLog(`💰 Raw (lamports): ${bal}`);
         addLog(`💰 Converted (SOL): ${bal / LAMPORTS_PER_SOL}`);
-        
+
         setBalance(bal / LAMPORTS_PER_SOL);
         addLog("=== SUCCESS ===");
     } catch(e) { 
@@ -92,41 +91,9 @@ export function PrivyWallet() {
         if (localWallet) fetchBalance();
     }, [localWallet, fetchBalance]);
 
-    // PASTE THIS BEFORE THE RETURN STATEMENT
-    const handleImport = () => {
-        try {
-            const text = importInput.trim();
-            let secretKey;
-
-            // Handle JSON Array format (e.g. [12, 44, ...])
-            if (text.startsWith('[') && text.endsWith(']')) {
-                secretKey = Uint8Array.from(JSON.parse(text));
-            } else {
-                // Handle Base58 format (Phantom/Solflare standard)
-                secretKey = bs58.decode(text);
-            }
-
-            // Verify Key Length (Solana keys must be 64 bytes)
-            if (secretKey.length !== 64) throw new Error("Invalid Key Length");
-
-            const keypair = Keypair.fromSecretKey(secretKey);
-            
-            // Save and Set
-            localStorage.setItem('orb_solana_key', bs58.encode(keypair.secretKey));
-            setLocalWallet(keypair);
-            setBalance(0); // Reset balance until fetch happens
-            setView('home'); // Close import screen
-            setImportInput('');
-            addLog("✅ Wallet Imported Successfully");
-        } catch (e) {
-            alert("Invalid Private Key format. Please check and try again.");
-            addLog(`❌ Import Error: ${e.message}`);
-        }
-    };
-
     // ... (Keep existing Helper Functions) ...
     const copyAddress = () => navigator.clipboard.writeText(localWallet?.publicKey.toString()) && alert("Copied!");
-    
+
     const copyPrivateKey = () => {
         if (!localWallet) return;
         try {
@@ -150,86 +117,7 @@ export function PrivyWallet() {
     };
 
     if (!authenticated) return <button onClick={login} className="text-green-400 border border-green-400 px-4 py-2 rounded">LOGIN</button>;
-        // --- 1. IMPORT SCREEN UI ---
-    if (view === 'import') {
-        return (
-            <div className="flex flex-col gap-3 p-4 bg-gray-900 border border-green-400/50 rounded w-full max-w-sm">
-                <div className="flex justify-between items-center">
-                    <h3 className="text-green-400 font-bold text-sm">Import Private Key</h3>
-                    {/* Close Button */}
-                    <button onClick={() => setView('home')}><X className="w-4 h-4 text-gray-400" /></button>
-                </div>
-                
-                <textarea
-                    value={importInput}
-                    onChange={(e) => setImportInput(e.target.value)}
-                    placeholder="Paste Private Key (Base58 or JSON)"
-                    className="bg-black border border-gray-700 text-white text-xs p-2 rounded h-20 font-mono focus:border-green-400 outline-none"
-                />
-                
-                <button 
-                    onClick={handleImport} 
-                    className="py-2 bg-green-400 text-black font-bold rounded text-xs hover:bg-green-300"
-                >
-                    IMPORT WALLET
-                </button>
-            </div>
-        );
-    }
-
-    // --- 2. NO WALLET SCREEN (The Buttons you are missing) ---
-    if (!localWallet) {
-        return (
-            <div className="flex flex-col gap-3 items-center">
-                <div className="text-green-400 text-sm mb-2">No Wallet Found</div>
-                <div className="flex gap-2">
-                    {/* Button 1: Create New */}
-                    <button 
-                        onClick={() => {
-                            const keypair = Keypair.generate();
-                            localStorage.setItem('orb_solana_key', bs58.encode(keypair.secretKey));
-                            setLocalWallet(keypair);
-                        }} 
-                        className="flex items-center gap-1 px-4 py-2 bg-green-400 text-black text-xs font-bold rounded hover:bg-green-300"
-                    >
-                        <Plus className="w-3 h-3" /> Create New
-                    </button>
-
-                    {/* Button 2: Import */}
-                    <button 
-                        onClick={() => setView('import')} 
-                        className="flex items-center gap-1 px-4 py-2 bg-gray-800 border border-green-400/50 text-green-400 text-xs font-bold rounded hover:bg-gray-700"
-                    >
-                        <Import className="w-3 h-3" /> Import
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    // --- IMPORT SCREEN VIEW ---
-    if (view === 'import') {
-        return (
-            <div className="flex flex-col gap-3 p-4 bg-black/90 border border-green-400/50 rounded w-full max-w-sm">
-                <div className="flex justify-between items-center">
-                    <h3 className="text-green-400 font-bold text-sm">Import Private Key</h3>
-                    <button onClick={() => setView('home')}><X className="w-4 h-4 text-gray-400" /></button>
-                </div>
-                <textarea
-                    value={importInput}
-                    onChange={(e) => setImportInput(e.target.value)}
-                    placeholder="Paste Private Key (Base58 or JSON)"
-                    className="bg-black border border-gray-700 text-white text-xs p-2 rounded h-20 font-mono focus:border-green-400 outline-none"
-                />
-                <button 
-                    onClick={handleImport} 
-                    className="py-2 bg-green-400 text-black font-bold rounded text-xs hover:bg-green-300"
-                >
-                    IMPORT WALLET
-                </button>
-            </div>
-        );
-    }
+    if (!localWallet) return <div className="text-green-400">Loading...</div>;
 
     return (
         <div className="flex flex-col items-end gap-2">
@@ -250,7 +138,7 @@ export function PrivyWallet() {
                     <button onClick={openSolscan}><ExternalLink className="w-3 h-3 text-gray-400" /></button>
                 </div>
             </div>
-            
+
             {errorMsg && <div className="text-[10px] text-red-400">{errorMsg}</div>}
 
             <div className="flex gap-3 text-[10px]">
