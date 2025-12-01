@@ -20,6 +20,7 @@ import {
 } from './api';
 import { HashRouter, Routes, Route, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AccessControl } from './AccessControl';
+import { SimpleWallet } from './SimpleWallet';
 // ============================================
 // CACHE SYSTEM
 // ============================================
