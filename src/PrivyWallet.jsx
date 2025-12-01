@@ -146,6 +146,18 @@ export function PrivyWallet() {
                 <button onClick={resetWallet} className="text-red-400">Reset</button>
                 <button onClick={logout} className="text-gray-400">Logout</button>
             </div>
+           {/* ADD THE DEBUG PANEL HERE - RIGHT BEFORE THE CLOSING </div> */}
+            {debugLogs.length > 0 && (
+                <div className="mt-2 p-3 bg-black/95 border-2 border-red-400 rounded text-[10px] text-red-400 max-h-60 overflow-y-auto w-96">
+                    <div className="font-bold mb-2 text-yellow-400">🔍 DEBUG LOGS:</div>
+                    {debugLogs.map((log, i) => (
+                        <div key={i} className="font-mono mb-1 border-b border-red-400/20 pb-1">
+                            {log}
+                        </div>
+                    ))}
+                </div>
+            )}
+
         </div>
     );
 }
