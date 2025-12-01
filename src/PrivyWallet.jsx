@@ -34,7 +34,7 @@ export function PrivyWallet() {
         }
     }, [authenticated]);
 
-    // const fetchBalance = useCallback(async () => {
+      const fetchBalance = useCallback(async () => {
     console.log("=== BALANCE FETCH DEBUG START ===");
     
     if (!localWallet?.publicKey) {
