@@ -151,6 +151,29 @@ export function PrivyWallet() {
 
     if (!authenticated) return <button onClick={login} className="text-green-400 border border-green-400 px-4 py-2 rounded">LOGIN</button>;
     if (!localWallet) return <div className="text-green-400">Loading...</div>;
+    // --- IMPORT SCREEN VIEW ---
+    if (view === 'import') {
+        return (
+            <div className="flex flex-col gap-3 p-4 bg-black/90 border border-green-400/50 rounded w-full max-w-sm">
+                <div className="flex justify-between items-center">
+                    <h3 className="text-green-400 font-bold text-sm">Import Private Key</h3>
+                    <button onClick={() => setView('home')}><X className="w-4 h-4 text-gray-400" /></button>
+                </div>
+                <textarea
+                    value={importInput}
+                    onChange={(e) => setImportInput(e.target.value)}
+                    placeholder="Paste Private Key (Base58 or JSON)"
+                    className="bg-black border border-gray-700 text-white text-xs p-2 rounded h-20 font-mono focus:border-green-400 outline-none"
+                />
+                <button 
+                    onClick={handleImport} 
+                    className="py-2 bg-green-400 text-black font-bold rounded text-xs hover:bg-green-300"
+                >
+                    IMPORT WALLET
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col items-end gap-2">
