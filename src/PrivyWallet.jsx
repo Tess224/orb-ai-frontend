@@ -16,6 +16,8 @@ export function PrivyWallet() {
     const [loading, setLoading] = useState(false);
     const [showKey, setShowKey] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
+    const [view, setView] = useState('home'); 
+    const [importInput, setImportInput] = useState('');
     const [debugLogs, setDebugLogs] = useState([]); 
 // ADD THIS FUNCTION HERE
     const addLog = (message) => {
