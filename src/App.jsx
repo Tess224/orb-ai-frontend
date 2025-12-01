@@ -19,6 +19,7 @@ import {
   getPrivacyAnalysis 
 } from './api';
 import { HashRouter, Routes, Route, Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { AccessControl } from './AccessControl';
 // ============================================
 // CACHE SYSTEM
 // ============================================
@@ -1140,12 +1141,14 @@ function Marketplace() {
 
 function App() {
   return (
+    <AccessControl>
       <HashRouter>
         <Routes>
           <Route path="/" element={<Terminal />} />
           <Route path="/marketplace" element={<Marketplace />} />
         </Routes>
       </HashRouter>
+    </AccessControl>
   );
 }
 
