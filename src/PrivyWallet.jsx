@@ -16,6 +16,11 @@ export function PrivyWallet() {
     const [loading, setLoading] = useState(false);
     const [showKey, setShowKey] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
+    const [debugLogs, setDebugLogs] = useState([]); 
+// ADD THIS FUNCTION HERE
+    const addLog = (message) => {
+        setDebugLogs(prev => [...prev.slice(-10), message]);
+    };
 
     // 1. Load/Create Wallet
     useEffect(() => {
@@ -35,21 +40,21 @@ export function PrivyWallet() {
     }, [authenticated]);
 
       const fetchBalance = useCallback(async () => {
-    console.log("=== BALANCE FETCH DEBUG START ===");
+    addLog("=== BALANCE FETCH START ===");
     
     if (!localWallet?.publicKey) {
-        console.log("❌ No wallet public key available");
+        addLog("❌ No wallet public key available");
         return;
     }
 
-    console.log("✅ Wallet exists");
-    console.log("📍 Wallet address:", localWallet.publicKey.toString());
-    console.log("🔑 API_KEY exists?", !!API_KEY);
-    console.log("🔑 API_KEY value (first 10 chars):", API_KEY ? API_KEY.substring(0, 10) + "..." : "UNDEFINED");
-    console.log("🔗 Full RPC Endpoint:", RPC_ENDPOINT);
+    addLog("✅ Wallet exists");
+    addLog(`📍 Wallet address: ${localWallet.publicKey.toString()}`);
+    addLog(`🔑 API_KEY exists? ${!!API_KEY}`);
+    addLog(`🔑 API_KEY value (first 10): ${API_KEY ? API_KEY.substring(0, 10) + "..." : "UNDEFINED"}`);
+    addLog(`🔗 RPC: ${RPC_ENDPOINT}`);
 
     if (!API_KEY) {
-        console.error("❌ CRITICAL: API_KEY is undefined or empty");
+        addLog("❌ CRITICAL: API_KEY is undefined");
         setErrorMsg("Missing API Key");
         return;
     }
@@ -58,26 +63,24 @@ export function PrivyWallet() {
     setErrorMsg('');
 
     try {
-        console.log("🔌 Step 1: Creating Solana connection...");
+        addLog("🔌 Creating connection...");
         const connection = new Connection(RPC_ENDPOINT, 'confirmed');
-        console.log("✅ Connection object created successfully");
+        addLog("✅ Connection created");
         
-        console.log("📡 Step 2: Calling getBalance on the blockchain...");
+        addLog("📡 Calling getBalance...");
         const bal = await connection.getBalance(localWallet.publicKey);
         
-        console.log("✅ Balance received!");
-        console.log("💰 Raw balance (lamports):", bal);
-        console.log("💰 Converted balance (SOL):", bal / LAMPORTS_PER_SOL);
+        addLog(`✅ Balance received!`);
+        addLog(`💰 Raw (lamports): ${bal}`);
+        addLog(`💰 Converted (SOL): ${bal / LAMPORTS_PER_SOL}`);
         
         setBalance(bal / LAMPORTS_PER_SOL);
-        console.log("=== BALANCE FETCH SUCCESS ===");
+        addLog("=== SUCCESS ===");
     } catch(e) { 
-        console.error("❌ ERROR OCCURRED!");
-        console.error("Error type:", e.name);
-        console.error("Error message:", e.message);
-        console.error("Full error object:", e);
+        addLog(`❌ ERROR: ${e.message}`);
+        console.error("Fetch failed:", e);
         setErrorMsg(`Connection Error: ${e.message}`);
-        console.log("=== BALANCE FETCH FAILED ===");
+        addLog("=== FAILED ===");
     } finally {
         setLoading(false);
     }
