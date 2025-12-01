@@ -150,7 +150,63 @@ export function PrivyWallet() {
     };
 
     if (!authenticated) return <button onClick={login} className="text-green-400 border border-green-400 px-4 py-2 rounded">LOGIN</button>;
-    if (!localWallet) return <div className="text-green-400">Loading...</div>;
+        // --- 1. IMPORT SCREEN UI ---
+    if (view === 'import') {
+        return (
+            <div className="flex flex-col gap-3 p-4 bg-gray-900 border border-green-400/50 rounded w-full max-w-sm">
+                <div className="flex justify-between items-center">
+                    <h3 className="text-green-400 font-bold text-sm">Import Private Key</h3>
+                    {/* Close Button */}
+                    <button onClick={() => setView('home')}><X className="w-4 h-4 text-gray-400" /></button>
+                </div>
+                
+                <textarea
+                    value={importInput}
+                    onChange={(e) => setImportInput(e.target.value)}
+                    placeholder="Paste Private Key (Base58 or JSON)"
+                    className="bg-black border border-gray-700 text-white text-xs p-2 rounded h-20 font-mono focus:border-green-400 outline-none"
+                />
+                
+                <button 
+                    onClick={handleImport} 
+                    className="py-2 bg-green-400 text-black font-bold rounded text-xs hover:bg-green-300"
+                >
+                    IMPORT WALLET
+                </button>
+            </div>
+        );
+    }
+
+    // --- 2. NO WALLET SCREEN (The Buttons you are missing) ---
+    if (!localWallet) {
+        return (
+            <div className="flex flex-col gap-3 items-center">
+                <div className="text-green-400 text-sm mb-2">No Wallet Found</div>
+                <div className="flex gap-2">
+                    {/* Button 1: Create New */}
+                    <button 
+                        onClick={() => {
+                            const keypair = Keypair.generate();
+                            localStorage.setItem('orb_solana_key', bs58.encode(keypair.secretKey));
+                            setLocalWallet(keypair);
+                        }} 
+                        className="flex items-center gap-1 px-4 py-2 bg-green-400 text-black text-xs font-bold rounded hover:bg-green-300"
+                    >
+                        <Plus className="w-3 h-3" /> Create New
+                    </button>
+
+                    {/* Button 2: Import */}
+                    <button 
+                        onClick={() => setView('import')} 
+                        className="flex items-center gap-1 px-4 py-2 bg-gray-800 border border-green-400/50 text-green-400 text-xs font-bold rounded hover:bg-gray-700"
+                    >
+                        <Import className="w-3 h-3" /> Import
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     // --- IMPORT SCREEN VIEW ---
     if (view === 'import') {
         return (
