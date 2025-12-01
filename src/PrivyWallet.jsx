@@ -92,6 +92,38 @@ export function PrivyWallet() {
         if (localWallet) fetchBalance();
     }, [localWallet, fetchBalance]);
 
+    // PASTE THIS BEFORE THE RETURN STATEMENT
+    const handleImport = () => {
+        try {
+            const text = importInput.trim();
+            let secretKey;
+
+            // Handle JSON Array format (e.g. [12, 44, ...])
+            if (text.startsWith('[') && text.endsWith(']')) {
+                secretKey = Uint8Array.from(JSON.parse(text));
+            } else {
+                // Handle Base58 format (Phantom/Solflare standard)
+                secretKey = bs58.decode(text);
+            }
+
+            // Verify Key Length (Solana keys must be 64 bytes)
+            if (secretKey.length !== 64) throw new Error("Invalid Key Length");
+
+            const keypair = Keypair.fromSecretKey(secretKey);
+            
+            // Save and Set
+            localStorage.setItem('orb_solana_key', bs58.encode(keypair.secretKey));
+            setLocalWallet(keypair);
+            setBalance(0); // Reset balance until fetch happens
+            setView('home'); // Close import screen
+            setImportInput('');
+            addLog("✅ Wallet Imported Successfully");
+        } catch (e) {
+            alert("Invalid Private Key format. Please check and try again.");
+            addLog(`❌ Import Error: ${e.message}`);
+        }
+    };
+
     // ... (Keep existing Helper Functions) ...
     const copyAddress = () => navigator.clipboard.writeText(localWallet?.publicKey.toString()) && alert("Copied!");
     
