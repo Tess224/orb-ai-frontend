@@ -252,12 +252,29 @@ export const analyzeWalletViaBackend = async (walletAddress, tokenAddress, holdi
  */
 export const getPrivacyAnalysis = async (tokenAddress) => {
   try {
+    // NEW CODE: Get the access code from localStorage
+    const accessCode = localStorage.getItem('orb_access_code') || 'anonymous';
+    
     const response = await fetch(`${BACKEND_URL}/analyze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token_address: tokenAddress })
+      body: JSON.stringify({ 
+        token_address: tokenAddress,
+        access_code: accessCode  // NEW CODE: Include the access code
+      })
     });
 
+    // NEW CODE: Handle rate limit errors specifically
+    if (response.status === 429) {
+      // Rate limit exceeded
+      const errorData = await response.json();
+      const resetTime = new Date(errorData.resets_at * 1000);
+      
+      alert(`Daily analysis limit exceeded!\n\nYou've used all ${errorData.limit} analyses for today.\n\nYour limit will reset at:\n${resetTime.toLocaleString()}`);
+      
+      throw new Error('Rate limit exceeded');
+    }
+    
     if (!response.ok) {
       throw new Error(`Backend returned ${response.status}`);
     }
