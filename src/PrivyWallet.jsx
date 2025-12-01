@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { Connection, LAMPORTS_PER_SOL, PublicKey, Keypair } from '@solana/web3.js';
-import { Copy, RefreshCw, LogOut, User, ExternalLink, Eye, EyeOff } from 'lucide-react';
+import { Copy, RefreshCw, LogOut, User, ExternalLink, Eye, EyeOff, Import, Plus, X } from 'lucide-react';
 import bs58 from 'bs58';
 
 // 🔒 SECURE CONNECTION
