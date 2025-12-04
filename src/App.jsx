@@ -630,6 +630,66 @@ function Terminal() {
                 </div>
               )}
 
+              {/* NEW SECTION: PUMP/DUMP SCORES */}
+              {coinScore.privacyMetrics.scores && (
+                <div className="border-2 border-purple-400/30 rounded-lg p-4 bg-black/50">
+                  <div className="text-xs font-bold text-green-400/60 mb-4">SCORES</div>
+                  
+                  <div className="space-y-4">
+                    {/* Pump Score */}
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-green-400">Pump Score</span>
+                        <span className="text-xl font-bold text-green-400">
+                          {coinScore.privacyMetrics.scores.pre_pump_score || 0}
+                        </span>
+                      </div>
+                      <div className="w-full bg-black border border-green-400/30 rounded-full h-3 overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-500 shadow-[0_0_10px_rgba(74,222,128,0.5)]"
+                          style={{ width: `${Math.min(100, coinScore.privacyMetrics.scores.pre_pump_score || 0)}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Dump Score */}
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-red-400">Dump Score</span>
+                        <span className="text-xl font-bold text-red-400">
+                          {coinScore.privacyMetrics.scores.pre_dump_score || 0}
+                        </span>
+                      </div>
+                      <div className="w-full bg-black border border-red-400/30 rounded-full h-3 overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-red-400 to-pink-500 transition-all duration-500 shadow-[0_0_10px_rgba(248,113,113,0.5)]"
+                          style={{ width: `${Math.min(100, coinScore.privacyMetrics.scores.pre_dump_score || 0)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Score Interpretation */}
+                  <div className="mt-4 pt-4 border-t border-purple-400/20">
+                    <div className="text-xs text-green-400/60">
+                      {coinScore.privacyMetrics.scores.pre_pump_score > coinScore.privacyMetrics.scores.pre_dump_score ? (
+                        <span className="text-green-400">
+                          ↗ Bullish signals detected ({coinScore.privacyMetrics.scores.pre_pump_score - coinScore.privacyMetrics.scores.pre_dump_score} point advantage)
+                        </span>
+                      ) : coinScore.privacyMetrics.scores.pre_dump_score > coinScore.privacyMetrics.scores.pre_pump_score ? (
+                        <span className="text-red-400">
+                          ↘ Bearish signals detected ({coinScore.privacyMetrics.scores.pre_dump_score - coinScore.privacyMetrics.scores.pre_pump_score} point advantage)
+                        </span>
+                      ) : (
+                        <span className="text-yellow-400">
+                          ⇄ Neutral - signals are balanced
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               {/* Velocity (NEW from friend's version) */}
               {coinScore.privacyMetrics.velocity && (
                 <div className="border-2 border-cyan-400/30 rounded-lg p-4 bg-cyan-400/5">
