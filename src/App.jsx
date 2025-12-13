@@ -70,6 +70,10 @@ function Terminal() {
   const [copiedAddress, setCopiedAddress] = useState(null);
   const [privacyMode, setPrivacyMode] = useState(true);
   const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0 });
+  // State for fusion signal (privacy mode enhanced analysis)
+  const [fusedSignal, setFusedSignal] = useState(null);
+  const [showMetricsDetail, setShowMetricsDetail] = useState(false);
+  const [showSlippageDetail, setShowSlippageDetail] = useState(false);
 
   const abortControllerRef = useRef(null);
   const countdownIntervalRef = useRef(null);
@@ -139,32 +143,52 @@ function Terminal() {
       if (signal.aborted) return;
       setCurrentToken(tokenInfo);
 
-      // Step 2: Handle Privacy Mode
+      // Step 2: Handle Privacy Mode with Fusion Signal
       if (privacyMode) {
-        const privacyAnalysisResult = await getPrivacyAnalysis(tokenInfo.contractAddress);
-        if (signal.aborted) return;
-
-        if (privacyAnalysisResult.error) {
-          setError(privacyAnalysisResult.error);
+        try {
+          // Fetch the fused signal which combines real-time metrics + slippage analysis
+          const fusionResult = await getFusedSignal(tokenInfo.contractAddress);
+    
+          if (signal.aborted) return;
+    
+          if (!fusionResult.success) {
+            setError('Failed to generate fusion signal');
+            setLoading(false);
+            setIsScanning(false);
+            if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+            return;
+          }
+    
+          // Store the complete fusion signal
+          setFusedSignal(fusionResult.signal);
+    
+    // Also maintain the old coinScore format for the header cards
+    // This lets us keep the existing token info display working
+          setCoinScore({
+            overall: Math.round(fusionResult.signal.confidence * 100),
+            smartMoney: '0.0',
+            avgWinRate: '0.0',
+            rating: fusionResult.signal.direction.toUpperCase().replace('_', ' '),
+            privacyMetrics: null // Clear old privacy metrics since we're using fusion now
+          });
+    
+          // Privacy mode doesn't analyze individual wallets
+          setWalletAnalysis([]);
+    
+          setLoading(false);
+          setIsScanning(false);
+          if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+          return;
+    
+        } catch (fusionError) {
+          console.error('Fusion signal error:', fusionError);
+          setError('Failed to analyze token in privacy mode');
           setLoading(false);
           setIsScanning(false);
           if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
           return;
         }
-
-        setCoinScore({
-          overall: privacyAnalysisResult.overall || privacyAnalysisResult.scores?.pre_pump_score || 0,
-          smartMoney: '0.0',
-          avgWinRate: '0.0',
-          rating: privacyAnalysisResult.rating || 'UNKNOWN',
-          privacyMetrics: privacyAnalysisResult
-        });
-        setWalletAnalysis([]);
-        setLoading(false);
-        setIsScanning(false);
-        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-        return;
-      }
+      }  
 
       // Step 3: Wallet Analysis Mode
       const holdersCacheKey = getCacheKey('holders', tokenInfo.contractAddress);
