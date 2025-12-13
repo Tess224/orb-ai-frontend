@@ -1265,6 +1265,9 @@ function Marketplace() {
               <Link to="/marketplace" className="px-3 py-1 bg-green-400 text-black text-sm font-bold rounded">
                 MARKETPLACE
               </Link>
+              <Link to="/dashboard" className="px-3 py-1 text-green-400 text-sm font-bold rounded hover:bg-green-400/10">
+                DASHBOARD
+              </Link>
             </div>
           </div>
           
