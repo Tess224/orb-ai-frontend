@@ -417,7 +417,7 @@ function Terminal() {
             <div className="flex items-center gap-3 flex-wrap">
               <div className="flex items-center gap-2 px-3 py-1 border border-purple-400/30 rounded bg-black/50">
                 <span className={`text-xs font-bold ${privacyMode ? 'text-purple-400' : 'text-green-400/60'}`}>
-                  PRIVACY MODE
+                  {privacyMode ? 'FUSION ANALYSIS' : 'WALLET ANALYSIS'}
                 </span>
                 <button
                   onClick={() => setPrivacyMode(!privacyMode)}
