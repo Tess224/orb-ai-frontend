@@ -306,6 +306,84 @@ export const getPrivacyAnalysis = async (tokenAddress) => {
   }
 };
 
+// ============================================
+// SIGNAL FUSION ENDPOINTS (Privacy Mode Enhanced Analysis)
+// ============================================
+
+/**
+ * Get fused signal combining real-time metrics and slippage analysis
+ * This replaces the old privacy mode analysis with a fusion of both systems
+ */
+export const getFusedSignal = async (tokenAddress, forceRefresh = false) => {
+  try {
+    const url = `${BACKEND_URL}/signal/fused/${tokenAddress}${forceRefresh ? '?force_refresh=true' : ''}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Fusion signal failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching fused signal:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get detailed explanation of fused signal with natural language
+ * Provides human-readable breakdown of why the signal was generated
+ */
+export const getFusedSignalExplanation = async (tokenAddress) => {
+  try {
+    const response = await fetch(`${BACKEND_URL}/signal/explain/${tokenAddress}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Explanation failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching signal explanation:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get batch fused signals for multiple tokens
+ * Useful for watchlist scanning in privacy mode
+ */
+export const getBatchFusedSignals = async (tokenAddresses) => {
+  try {
+    const response = await fetch(`${BACKEND_URL}/signal/batch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token_addresses: tokenAddresses
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Batch fusion failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching batch signals:', error);
+    throw error;
+  }
+};
+
 /**
  * Check if backend is healthy
  */
