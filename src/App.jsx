@@ -613,219 +613,405 @@ function Terminal() {
           </div>
         )}
 
-        {/* Privacy Mode Detailed Analysis */}
-        {privacyMode && currentToken && coinScore && coinScore.privacyMetrics && (
+        {/* Privacy Mode - Fusion Signal Analysis */}
+        {privacyMode && fusedSignal && currentToken && (
           <div className="border-2 border-purple-400/30 rounded-lg bg-black/50 overflow-hidden mb-6">
-            <div className="p-4 border-b-2 border-purple-400/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-purple-400" />
-                  <h2 className="text-lg font-bold text-purple-400">
-                    ORDERBOOK MICROSTRUCTURE ANALYSIS
-                  </h2>
+    
+            {/* Header */}
+            <div className="p-4 border-b-2 border-purple-400/30 bg-gradient-to-r from-purple-900/20 to-pink-900/20">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <Brain className="w-6 h-6 text-purple-400" />
+                  <div>
+                    <h2 className="text-lg font-bold text-purple-400">FUSED SIGNAL ANALYSIS</h2>
+                    <p className="text-xs text-green-400/60">Real-time Metrics + Liquidity Structure</p>
+                  </div>
+                </div>
+                <div className={`px-4 py-2 rounded-lg border-2 ${
+                  fusedSignal.direction === 'strong_bullish' ? 'border-green-400 bg-green-400/20' :
+                  fusedSignal.direction === 'bullish' ? 'border-green-400/60 bg-green-400/10' :
+                  fusedSignal.direction === 'neutral' ? 'border-yellow-400 bg-yellow-400/10' :
+                  fusedSignal.direction === 'bearish' ? 'border-red-400/60 bg-red-400/10' :
+                  fusedSignal.direction === 'strong_bearish' ? 'border-red-400 bg-red-400/20' :
+                  'border-red-600 bg-red-600/30'
+                }`}>
+                  <span className={`text-sm font-bold ${
+                    fusedSignal.direction === 'strong_bullish' ? 'text-green-400' :
+                    fusedSignal.direction === 'bullish' ? 'text-green-300' :
+                    fusedSignal.direction === 'neutral' ? 'text-yellow-400' :
+                    fusedSignal.direction === 'bearish' ? 'text-red-300' :
+                    fusedSignal.direction === 'strong_bearish' ? 'text-red-400' :
+                    'text-red-600'
+                  }`}>
+                    {fusedSignal.direction.toUpperCase().replace('_', ' ')}
+                  </span>
                 </div>
               </div>
             </div>
-            
+
             <div className="p-6 space-y-6">
-              {/* Main Action */}
-              {coinScore.privacyMetrics.action && (
+      
+              {/* Main Action and Confidence Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+                {/* Action Recommendation Card */}
                 <div className={`border-2 rounded-lg p-6 ${
-                  coinScore.privacyMetrics.state === 'PRE_PUMP' || coinScore.privacyMetrics.state === 'PUMP'
-                    ? 'border-green-400 bg-green-400/10'
-                    : coinScore.privacyMetrics.state === 'PRE_DUMP' || coinScore.privacyMetrics.state === 'DUMP'
-                    ? 'border-red-400 bg-red-400/10'
-                    : coinScore.privacyMetrics.state === 'HOLDING'
-                    ? 'border-cyan-400 bg-cyan-400/10'
-                    : 'border-yellow-400 bg-yellow-400/10'
+                  fusedSignal.action_code === 'BUY' ? 'border-green-400 bg-green-400/10' :
+                  fusedSignal.action_code === 'SELL' ? 'border-red-400 bg-red-400/10' :
+                  fusedSignal.action_code === 'EXIT' ? 'border-red-600 bg-red-600/20' :
+                  fusedSignal.action_code === 'AVOID' ? 'border-orange-400 bg-orange-400/10' :
+                  'border-cyan-400 bg-cyan-400/10'
                 }`}>
                   <div className="text-xs font-bold text-green-400/60 mb-2">RECOMMENDATION</div>
-                  <div className={`text-2xl font-bold ${
-                    coinScore.privacyMetrics.state === 'PRE_PUMP' || coinScore.privacyMetrics.state === 'PUMP'
-                      ? 'text-green-400'
-                      : coinScore.privacyMetrics.state === 'PRE_DUMP' || coinScore.privacyMetrics.state === 'DUMP'
-                      ? 'text-red-400'
-                      : coinScore.privacyMetrics.state === 'HOLDING'
-                      ? 'text-cyan-400'
-                      : 'text-yellow-400'
+                  <div className={`text-xl font-bold mb-3 ${
+                    fusedSignal.action_code === 'BUY' ? 'text-green-400' :
+                    fusedSignal.action_code === 'SELL' ? 'text-red-400' :
+                    fusedSignal.action_code === 'EXIT' ? 'text-red-600' :
+                    fusedSignal.action_code === 'AVOID' ? 'text-orange-400' :
+                    'text-cyan-400'
                   }`}>
-                    {coinScore.privacyMetrics.action}
+                    {fusedSignal.action}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs text-green-400/60">Action:</span>
+                    <span className={`text-sm font-bold px-3 py-1 rounded ${
+                      fusedSignal.action_code === 'BUY' ? 'bg-green-400/20 text-green-400' :
+                      fusedSignal.action_code === 'SELL' ? 'bg-red-400/20 text-red-400' :
+                      fusedSignal.action_code === 'EXIT' ? 'bg-red-600/20 text-red-600' :
+                      fusedSignal.action_code === 'AVOID' ? 'bg-orange-400/20 text-orange-400' :
+                      'bg-cyan-400/20 text-cyan-400'
+                    }`}>
+                      {fusedSignal.action_code}
+                    </span>
+                    <span className="text-xs text-green-400/60 ml-auto">Urgency: {fusedSignal.urgency.replace('_', ' ')}</span>
                   </div>
                 </div>
-              )}
 
-              {/* NEW SECTION: PUMP/DUMP SCORES */}
-              {coinScore.privacyMetrics.scores && (
-                <div className="border-2 border-purple-400/30 rounded-lg p-4 bg-black/50">
-                  <div className="text-xs font-bold text-green-400/60 mb-4">SCORES</div>
-                  
-                  <div className="space-y-4">
-                    {/* Pump Score */}
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-green-400">Pump Score</span>
-                        <span className="text-xl font-bold text-green-400">
-                          {coinScore.privacyMetrics.scores.pre_pump_score || 0}
-                        </span>
-                      </div>
-                      <div className="w-full bg-black border border-green-400/30 rounded-full h-3 overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-500 shadow-[0_0_10px_rgba(74,222,128,0.5)]"
-                          style={{ width: `${Math.min(100, coinScore.privacyMetrics.scores.pre_pump_score || 0)}%` }}
-                        />
-                      </div>
+                {/* Confidence and Agreement Card */}
+                <div className="border-2 border-purple-400/30 rounded-lg p-6 bg-purple-400/5">
+                  <div className="text-xs font-bold text-green-400/60 mb-4">SIGNAL STRENGTH</div>
+          
+                  {/* Confidence Bar */}
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-green-400/60">Confidence Level</span>
+                      <span className="text-2xl font-bold text-purple-400">
+                        {(fusedSignal.confidence * 100).toFixed(0)}%
+                      </span>
                     </div>
-
-                    {/* Dump Score */}
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-red-400">Dump Score</span>
-                        <span className="text-xl font-bold text-red-400">
-                          {coinScore.privacyMetrics.scores.pre_dump_score || 0}
-                        </span>
-                      </div>
-                      <div className="w-full bg-black border border-red-400/30 rounded-full h-3 overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-red-400 to-pink-500 transition-all duration-500 shadow-[0_0_10px_rgba(248,113,113,0.5)]"
-                          style={{ width: `${Math.min(100, coinScore.privacyMetrics.scores.pre_dump_score || 0)}%` }}
-                        />
-                      </div>
+                    <div className="w-full bg-black border border-purple-400/30 rounded-full h-3 overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-500 shadow-lg ${
+                          fusedSignal.confidence > 0.7 ? 'bg-gradient-to-r from-green-400 to-emerald-500 shadow-green-400/50' :
+                          fusedSignal.confidence > 0.5 ? 'bg-gradient-to-r from-yellow-400 to-orange-400 shadow-yellow-400/50' :
+                          'bg-gradient-to-r from-red-400 to-pink-500 shadow-red-400/50'
+                        }`}
+                        style={{ width: `${fusedSignal.confidence * 100}%` }}
+                      />
+                    </div>
+                    <div className="text-xs text-green-400/60 mt-1">
+                      {fusedSignal.confidence > 0.7 ? 'High confidence signal' : 
+                       fusedSignal.confidence > 0.5 ? 'Medium confidence signal' : 
+                       'Low confidence signal'}
                     </div>
                   </div>
 
-                  {/* Score Interpretation */}
-                  <div className="mt-4 pt-4 border-t border-purple-400/20">
-                    <div className="text-xs text-green-400/60">
-                      {coinScore.privacyMetrics.scores.pre_pump_score > coinScore.privacyMetrics.scores.pre_dump_score ? (
-                        <span className="text-green-400">
-                          ↗ Bullish signals detected ({coinScore.privacyMetrics.scores.pre_pump_score - coinScore.privacyMetrics.scores.pre_dump_score} point advantage)
-                        </span>
-                      ) : coinScore.privacyMetrics.scores.pre_dump_score > coinScore.privacyMetrics.scores.pre_pump_score ? (
-                        <span className="text-red-400">
-                          ↘ Bearish signals detected ({coinScore.privacyMetrics.scores.pre_dump_score - coinScore.privacyMetrics.scores.pre_pump_score} point advantage)
-                        </span>
-                      ) : (
-                        <span className="text-yellow-400">
-                          ⇄ Neutral - signals are balanced
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Velocity (NEW from friend's version) */}
-              {coinScore.privacyMetrics.velocity && (
-                <div className="border-2 border-cyan-400/30 rounded-lg p-4 bg-cyan-400/5">
-                  <div className="text-xs font-bold text-green-400/60 mb-3">VELOCITY ANALYSIS</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-2xl font-bold text-cyan-400">
-                        {coinScore.privacyMetrics.velocity.ratio_percent?.toFixed(1) || '0.0'}%
-                      </div>
-                      <div className="text-xs text-green-400/60 mt-1">Volume / Liquidity Ratio</div>
-                    </div>
-                    <div>
-                      <div className={`text-xl font-bold ${
-                        coinScore.privacyMetrics.velocity.status === 'HEALTHY' ? 'text-green-400' :
-                        coinScore.privacyMetrics.velocity.status === 'ZOMBIE' ? 'text-red-400' :
-                        coinScore.privacyMetrics.velocity.status === 'FRENZY' ? 'text-orange-400' :
-                        'text-yellow-400'
+                  {/* Systems Agreement Status */}
+                  <div className="pt-4 border-t border-purple-400/20">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-green-400/60">Systems Agreement</span>
+                      <span className={`text-sm font-bold px-2 py-1 rounded ${
+                        fusedSignal.systems_agree ? 'bg-green-400/20 text-green-400' : 'bg-orange-400/20 text-orange-400'
                       }`}>
-                        {coinScore.privacyMetrics.velocity.status || 'UNKNOWN'}
-                      </div>
-                      <div className="text-xs text-green-400/60 mt-1">
-                        {coinScore.privacyMetrics.velocity.description || 'No velocity data'}
-                      </div>
+                        {fusedSignal.systems_agree ? '✓ AGREE' : '⚠ DISAGREE'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-green-400/60">Alignment Strength</span>
+                      <span className="text-purple-400 font-bold">
+                        {(Math.abs(fusedSignal.agreement_strength) * 100).toFixed(0)}%
+                        {fusedSignal.agreement_strength < 0 && ' (opposing)'}
+                      </span>
                     </div>
                   </div>
-                  <div className="mt-3 text-xs text-cyan-400">
-                    Health Score: {coinScore.privacyMetrics.velocity.health_score || 0}/100
+                </div>
+              </div>
+
+              {/* Disagreement Warning Banner */}
+              {!fusedSignal.systems_agree && fusedSignal.disagreement_reason && (
+                <div className="border-2 border-orange-400/30 rounded-lg p-4 bg-orange-400/5">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-orange-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-sm font-bold text-orange-400 mb-2">Why the Systems Disagree</div>
+                      <div className="text-sm text-green-400/80 leading-relaxed">{fusedSignal.disagreement_reason}</div>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Signals */}
-              {coinScore.privacyMetrics.signals && coinScore.privacyMetrics.signals.length > 0 && (
-                <div className="border-2 border-yellow-400/30 rounded-lg p-4 bg-yellow-400/5">
-                  <div className="text-xs font-bold text-green-400/60 mb-3">
-                    SIGNALS DETECTED
+              {/* Risk Assessment Section */}
+              {fusedSignal.risk_factors && fusedSignal.risk_factors.length > 0 && (
+                <div className={`border-2 rounded-lg p-4 ${
+                  fusedSignal.risk_level === 'extreme' ? 'border-red-600 bg-red-600/20' :
+                  fusedSignal.risk_level === 'high' ? 'border-red-400 bg-red-400/10' :
+                  fusedSignal.risk_level === 'medium' ? 'border-yellow-400 bg-yellow-400/10' :
+                  'border-green-400 bg-green-400/10'
+                }`}>
+                  <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                    <div className="text-sm font-bold text-green-400/60">RISK ASSESSMENT</div>
+                    <span className={`text-sm font-bold px-3 py-1 rounded ${
+                      fusedSignal.risk_level === 'extreme' ? 'bg-red-600/30 text-red-600' :
+                      fusedSignal.risk_level === 'high' ? 'bg-red-400/20 text-red-400' :
+                      fusedSignal.risk_level === 'medium' ? 'bg-yellow-400/20 text-yellow-400' :
+                      'bg-green-400/20 text-green-400'
+                    }`}>
+                      {fusedSignal.risk_level.toUpperCase()} RISK
+                    </span>
                   </div>
                   <div className="space-y-2">
-                    {coinScore.privacyMetrics.signals.map((signal, idx) => (
+                    {fusedSignal.risk_factors.map((factor, idx) => (
                       <div key={idx} className="flex items-start gap-2 text-sm">
-                        <span className="text-yellow-400 mt-0.5">•</span>
-                        <span className="text-yellow-400">{signal}</span>
+                        <span className="text-yellow-400 mt-0.5 flex-shrink-0">•</span>
+                        <span className="text-green-400/80">{factor}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Slippage Data */}
-              {coinScore.privacyMetrics.slippage_data && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Buy Slippage */}
-                  <div className="border-2 border-green-400/30 rounded-lg p-4 bg-green-400/5">
-                    <div className="text-xs font-bold text-green-400/60 mb-3">
-                      BUY SLIPPAGE
-                    </div>
-                    {coinScore.privacyMetrics.slippage_data.buy_slippage && 
-                     coinScore.privacyMetrics.slippage_data.buy_slippage.length > 0 ? (
-                      <div className="space-y-2">
-                        {coinScore.privacyMetrics.slippage_data.buy_slippage.map((slip, idx) => (
-                          <div key={idx} className="flex justify-between items-center text-xs border-b border-green-400/10 pb-2">
-                            <span className="text-green-400/60">
-                              ${slip.size_usd || slip.probeSize} trade:
-                            </span>
-                            <span className={`font-bold px-2 py-0.5 rounded ${
-                              slip.slippage_pct < 1 ? 'bg-green-400/20 text-green-400' :
-                              slip.slippage_pct < 3 ? 'bg-yellow-400/20 text-yellow-400' :
-                              slip.slippage_pct < 7 ? 'bg-orange-400/20 text-orange-400' :
-                              'bg-red-400/20 text-red-400'
-                            }`}>
-                              +{slip.slippage_pct?.toFixed(2) || '0.00'}%
-                            </span>
-                          </div>
-                        ))}
+              {/* Collapsible Technical Details */}
+              <div className="space-y-3">
+        
+                {/* Real-Time Metrics Breakdown */}
+                {fusedSignal.metrics_signal && (
+                  <div className="border-2 border-cyan-400/30 rounded-lg overflow-hidden bg-cyan-400/5">
+                    <button
+                      onClick={() => setShowMetricsDetail(!showMetricsDetail)}
+                      className="w-full p-4 flex items-center justify-between hover:bg-cyan-400/10 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Activity className="w-5 h-5 text-cyan-400" />
+                        <div className="text-left">
+                          <div className="text-sm font-bold text-cyan-400">Real-Time Metrics Analysis</div>
+                          <div className="text-xs text-green-400/60">WebSocket order flow & volume patterns</div>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="text-xs text-green-400/60">No buy slippage data</div>
+                      <ChevronRight className={`w-5 h-5 text-cyan-400 transition-transform ${showMetricsDetail ? 'rotate-90' : ''}`} />
+                    </button>
+            
+                    {showMetricsDetail && (
+                      <div className="p-4 border-t border-cyan-400/30 space-y-4">
+                
+                        {/* Summary Grid */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <div className="text-xs text-green-400/60 mb-1">Metrics Direction</div>
+                            <div className="text-sm font-bold text-cyan-400 capitalize">
+                              {fusedSignal.metrics_signal.direction.replace('_', ' ')}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-green-400/60 mb-1">Metrics Confidence</div>
+                            <div className="text-sm font-bold text-cyan-400">
+                              {(fusedSignal.metrics_signal.confidence * 100).toFixed(0)}%
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-green-400/60 mb-1">Token Phase</div>
+                            <div className="text-sm font-bold text-cyan-400 capitalize">
+                              {fusedSignal.metrics_signal.phase}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-green-400/60 mb-1">Volume Trend</div>
+                            <div className="text-sm font-bold text-cyan-400 capitalize">
+                              {fusedSignal.metrics_signal.volume_trend.replace('_', ' ')}
+                            </div>
+                          </div>
+                        </div>
+                
+                        {/* Key Indicators */}
+                        <div className="pt-3 border-t border-cyan-400/20">
+                          <div className="text-xs font-bold text-green-400/60 mb-3">Key Indicators</div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-black/30 rounded p-2">
+                              <div className="text-xs text-green-400/60 mb-1">VTS (Volume Trend)</div>
+                              <div className="text-lg font-bold text-cyan-400">{fusedSignal.metrics_signal.vts.toFixed(2)}</div>
+                              <div className="text-xs text-cyan-400/60">
+                                {fusedSignal.metrics_signal.vts > 2.0 ? '📈 Surging' : 
+                                 fusedSignal.metrics_signal.vts > 1.3 ? '↗️ Rising' :
+                                 fusedSignal.metrics_signal.vts > 0.7 ? '➡️ Stable' : '📉 Declining'}
+                              </div>
+                            </div>
+                            <div className="bg-black/30 rounded p-2">
+                              <div className="text-xs text-green-400/60 mb-1">PII (Pressure Index)</div>
+                              <div className="text-lg font-bold text-cyan-400">{fusedSignal.metrics_signal.pii.toFixed(3)}</div>
+                              <div className="text-xs text-cyan-400/60">
+                                {fusedSignal.metrics_signal.pii > 0.3 ? '🟢 Strong buy' :
+                                 fusedSignal.metrics_signal.pii > 0.1 ? '🟢 Buy pressure' :
+                                 fusedSignal.metrics_signal.pii < -0.3 ? '🔴 Strong sell' :
+                                 fusedSignal.metrics_signal.pii < -0.1 ? '🔴 Sell pressure' : '⚪ Neutral'}
+                              </div>
+                            </div>
+                            {fusedSignal.metrics_signal.vei !== undefined && (
+                              <div className="bg-black/30 rounded p-2">
+                                <div className="text-xs text-green-400/60 mb-1">VEI (Exhaustion)</div>
+                                <div className="text-lg font-bold text-cyan-400">{fusedSignal.metrics_signal.vei.toFixed(2)}</div>
+                                <div className="text-xs text-cyan-400/60">
+                                  {fusedSignal.metrics_signal.vei > 0.5 ? '✅ Healthy' : '⚠️ Exhausted'}
+                                </div>
+                              </div>
+                            )}
+                            {fusedSignal.metrics_signal.conviction_multiplier !== undefined && (
+                              <div className="bg-black/30 rounded p-2">
+                                <div className="text-xs text-green-400/60 mb-1">Conviction Quality</div>
+                                <div className="text-lg font-bold text-cyan-400">{fusedSignal.metrics_signal.conviction_multiplier.toFixed(2)}</div>
+                                <div className="text-xs text-cyan-400/60">
+                                  {fusedSignal.metrics_signal.conviction_multiplier > 1.2 ? '💪 High' :
+                                   fusedSignal.metrics_signal.conviction_multiplier < 0.8 ? '🤖 Artificial?' : '➡️ Normal'}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                
+                        {/* Detected Factors */}
+                        {fusedSignal.metrics_signal.key_factors && fusedSignal.metrics_signal.key_factors.length > 0 && (
+                          <div className="pt-3 border-t border-cyan-400/20">
+                            <div className="text-xs font-bold text-green-400/60 mb-2">Detected Factors</div>
+                            <div className="space-y-1">
+                              {fusedSignal.metrics_signal.key_factors.map((factor, idx) => (
+                                <div key={idx} className="text-xs text-cyan-400/80 flex items-start gap-2">
+                                  <span className="mt-0.5">•</span>
+                                  <span>{factor}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
+                )}
 
-                  {/* Sell Slippage */}
-                  <div className="border-2 border-red-400/30 rounded-lg p-4 bg-red-400/5">
-                    <div className="text-xs font-bold text-green-400/60 mb-3">
-                      SELL SLIPPAGE
-                    </div>
-                    {coinScore.privacyMetrics.slippage_data.sell_slippage && 
-                     coinScore.privacyMetrics.slippage_data.sell_slippage.length > 0 ? (
-                      <div className="space-y-2">
-                        {coinScore.privacyMetrics.slippage_data.sell_slippage.map((slip, idx) => (
-                          <div key={idx} className="flex justify-between items-center text-xs border-b border-red-400/10 pb-2">
-                            <span className="text-red-400/60">
-                              ${slip.size_usd || slip.probeSize} trade:
-                            </span>
-                            <span className={`font-bold px-2 py-0.5 rounded ${
-                              slip.slippage_pct < 1 ? 'bg-green-400/20 text-green-400' :
-                              slip.slippage_pct < 3 ? 'bg-yellow-400/20 text-yellow-400' :
-                              slip.slippage_pct < 7 ? 'bg-orange-400/20 text-orange-400' :
-                              'bg-red-400/20 text-red-400'
-                            }`}>
-                              -{slip.slippage_pct?.toFixed(2) || '0.00'}%
-                            </span>
-                          </div>
-                        ))}
+                {/* Liquidity Structure Breakdown */}
+                {fusedSignal.slippage_signal && (
+                  <div className="border-2 border-green-400/30 rounded-lg overflow-hidden bg-green-400/5">
+                    <button
+                      onClick={() => setShowSlippageDetail(!showSlippageDetail)}
+                      className="w-full p-4 flex items-center justify-between hover:bg-green-400/10 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <TrendingUp className="w-5 h-5 text-green-400" />
+                        <div className="text-left">
+                          <div className="text-sm font-bold text-green-400">Liquidity Structure Analysis</div>
+                          <div className="text-xs text-green-400/60">Orderbook depth & slippage patterns</div>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="text-xs text-red-400/60">No sell slippage data</div>
+                      <ChevronRight className={`w-5 h-5 text-green-400 transition-transform ${showSlippageDetail ? 'rotate-90' : ''}`} />
+                    </button>
+            
+                    {showSlippageDetail && (
+                      <div className="p-4 border-t border-green-400/30 space-y-4">
+                
+                        {/* Summary Grid */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <div className="text-xs text-green-400/60 mb-1">Slippage Direction</div>
+                            <div className="text-sm font-bold text-green-400 capitalize">
+                              {fusedSignal.slippage_signal.direction.replace('_', ' ')}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-green-400/60 mb-1">Slippage Confidence</div>
+                            <div className="text-sm font-bold text-green-400">
+                              {(fusedSignal.slippage_signal.confidence * 100).toFixed(0)}%
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-green-400/60 mb-1">Market State</div>
+                            <div className="text-sm font-bold text-green-400">
+                              {fusedSignal.slippage_signal.state}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-green-400/60 mb-1">Liquidity Health</div>
+                            <div className={`text-sm font-bold ${
+                              fusedSignal.slippage_signal.liquidity_health === 'favorable' ? 'text-green-400' :
+                              fusedSignal.slippage_signal.liquidity_health === 'healthy' ? 'text-cyan-400' :
+                              fusedSignal.slippage_signal.liquidity_health === 'degrading' ? 'text-yellow-400' :
+                              'text-red-400'
+                            }`}>
+                              {fusedSignal.slippage_signal.liquidity_health.toUpperCase()}
+                            </div>
+                          </div>
+                        </div>
+                
+                        {/* Asymmetry Analysis */}
+                        <div className="pt-3 border-t border-green-400/20">
+                          <div className="text-xs font-bold text-green-400/60 mb-3">Asymmetry Analysis</div>
+                          <div className="bg-black/30 rounded p-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm text-green-400/60">Buy vs Sell Asymmetry</span>
+                              <span className={`text-lg font-bold ${
+                                fusedSignal.slippage_signal.asymmetry_ratio > 2.0 ? 'text-red-400' :
+                                fusedSignal.slippage_signal.asymmetry_ratio > 1.5 ? 'text-yellow-400' :
+                                fusedSignal.slippage_signal.asymmetry_ratio < 0.6 ? 'text-green-400' :
+                                'text-cyan-400'
+                              }`}>
+                                {fusedSignal.slippage_signal.asymmetry_ratio.toFixed(2)}x
+                              </span>
+                            </div>
+                            <div className="text-xs text-green-400/60">
+                              {fusedSignal.slippage_signal.asymmetry_ratio > 2.0 ? '⚠️ Much harder to sell than buy' :
+                               fusedSignal.slippage_signal.asymmetry_ratio > 1.5 ? '⚠️ Harder to sell than buy' :
+                               fusedSignal.slippage_signal.asymmetry_ratio < 0.6 ? '✅ Easier to sell than buy' :
+                               '➡️ Balanced buy/sell conditions'}
+                            </div>
+                          </div>
+                        </div>
+                
+                        {/* Critical Warnings */}
+                        {(fusedSignal.slippage_signal.is_honeypot || fusedSignal.slippage_signal.manipulation_detected) && (
+                          <div className="pt-3 border-t border-red-400/30">
+                            <div className="text-xs font-bold text-red-400 mb-2">🚨 CRITICAL WARNINGS</div>
+                            <div className="space-y-2">
+                              {fusedSignal.slippage_signal.is_honeypot && (
+                                <div className="bg-red-600/20 border border-red-600/50 rounded p-2 text-xs text-red-400">
+                                  <span className="font-bold">HONEYPOT DETECTED:</span> You will NOT be able to sell tokens
+                                </div>
+                              )}
+                              {fusedSignal.slippage_signal.manipulation_detected && (
+                                <div className="bg-orange-600/20 border border-orange-600/50 rounded p-2 text-xs text-orange-400">
+                                  <span className="font-bold">MANIPULATION DETECTED:</span> Suspicious liquidity patterns found
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                
+                        {/* Detected Patterns */}
+                        {fusedSignal.slippage_signal.key_factors && fusedSignal.slippage_signal.key_factors.length > 0 && (
+                          <div className="pt-3 border-t border-green-400/20">
+                            <div className="text-xs font-bold text-green-400/60 mb-2">Detected Patterns</div>
+                            <div className="space-y-1">
+                              {fusedSignal.slippage_signal.key_factors.map((factor, idx) => (
+                                <div key={idx} className="text-xs text-green-400/80 flex items-start gap-2">
+                                  <span className="mt-0.5">•</span>
+                                  <span>{factor}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
+          </div>  
         )}
 
         {/* Wallet Analysis Table */}
