@@ -1420,6 +1420,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Terminal />} />
           <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
       </HashRouter>
     </AccessControl>
