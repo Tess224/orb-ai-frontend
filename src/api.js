@@ -398,3 +398,83 @@ export const checkBackendHealth = async () => {
     return false;
   }
 };
+
+
+// ============================================
+// TRACKING STATUS & DASHBOARD FUNCTIONS
+// ============================================
+
+/**
+ * Get the list of currently tracked tokens
+ * Returns array of tokens being monitored by the real-time system
+ */
+export const getTrackingStatus = async () => {
+  try {
+    const response = await fetch(`${BACKEND_URL}/tracking/status`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Tracking status failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching tracking status:', error);
+    throw error;
+  }
+};
+
+/**
+ * Start tracking a new token
+ * Tells the backend to begin WebSocket monitoring for this token
+ */
+export const startTrackingToken = async (tokenAddress) => {
+  try {
+    const response = await fetch(`${BACKEND_URL}/tracking/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token_address: tokenAddress
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Start tracking failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error starting token tracking:', error);
+    throw error;
+  }
+};
+
+/**
+ * Stop tracking a token
+ * Tells the backend to close the WebSocket connection for this token
+ */
+export const stopTrackingToken = async (tokenAddress) => {
+  try {
+    const response = await fetch(`${BACKEND_URL}/tracking/stop`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token_address: tokenAddress
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Stop tracking failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error stopping token tracking:', error);
+    throw error;
+  }
+};
