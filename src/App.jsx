@@ -16,7 +16,10 @@ import {
   fetchTokenHolders,
   getTokenSupply,
   analyzeWalletViaBackend,
-  getPrivacyAnalysis 
+  getPrivacyAnalysis,
+  getFusedSignal,
+  getBatchFusedSignals,
+  getFusedSignalExplanation
 } from './api';
 import { HashRouter, Routes, Route, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AccessControl } from './AccessControl';
