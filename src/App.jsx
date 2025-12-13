@@ -1412,7 +1412,384 @@ function Marketplace() {
   );
 }
 
+//
+
 // ============================================
+// DASHBOARD COMPONENT - Tracked Tokens Monitor
+// ============================================
+
+function Dashboard() {
+  const navigate = useNavigate();
+  const [trackedTokens, setTrackedTokens] = useState([]);
+  const [tokenSignals, setTokenSignals] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+  const [addTokenAddress, setAddTokenAddress] = useState('');
+  const [addingToken, setAddingToken] = useState(false);
+
+  // Fetch tracked tokens and their signals on component mount
+  useEffect(() => {
+    loadDashboard();
+    
+    // Auto-refresh every 60 seconds
+    const interval = setInterval(() => {
+      loadDashboard(true);
+    }, 60000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadDashboard = async (isAutoRefresh = false) => {
+    if (isAutoRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    setError('');
+
+    try {
+      // Step 1: Get list of tracked tokens from backend
+      const statusResponse = await getTrackingStatus();
+      
+      if (!statusResponse.success) {
+        throw new Error('Failed to fetch tracking status');
+      }
+
+      const tracked = statusResponse.tracked_tokens || [];
+      setTrackedTokens(tracked);
+
+      // Step 2: If there are tracked tokens, get fusion signals for each
+      if (tracked.length > 0) {
+        const tokenAddresses = tracked.map(t => t.token_address || t.address);
+        
+        try {
+          // Use batch endpoint to get all signals at once
+          const batchResponse = await getBatchFusedSignals(tokenAddresses);
+          
+          if (batchResponse.success) {
+            setTokenSignals(batchResponse.results || {});
+          }
+        } catch (batchError) {
+          console.error('Batch signals failed, fetching individually:', batchError);
+          
+          // Fallback: fetch signals individually if batch fails
+          const signals = {};
+          for (const token of tracked) {
+            const addr = token.token_address || token.address;
+            try {
+              const fusionResult = await getFusedSignal(addr);
+              if (fusionResult.success) {
+                signals[addr] = {
+                  signal: fusionResult.signal,
+                  has_metrics: fusionResult.data_sources?.metrics_available,
+                  has_slippage: fusionResult.data_sources?.slippage_available
+                };
+              }
+            } catch (err) {
+              console.error(`Failed to get signal for ${addr}:`, err);
+              signals[addr] = { error: err.message };
+            }
+          }
+          setTokenSignals(signals);
+        }
+      } else {
+        setTokenSignals({});
+      }
+
+    } catch (err) {
+      setError(err.message || 'Failed to load dashboard');
+      console.error('Dashboard load error:', err);
+    }
+
+    setLoading(false);
+    setRefreshing(false);
+  };
+
+  const handleAddToken = async () => {
+    if (!addTokenAddress.trim()) return;
+    
+    setAddingToken(true);
+    setError('');
+
+    try {
+      const result = await startTrackingToken(addTokenAddress.trim());
+      
+      if (result.success) {
+        setAddTokenAddress('');
+        // Reload dashboard to show the new token
+        setTimeout(() => loadDashboard(), 2000); // Wait 2 seconds for backend to initialize tracking
+      } else {
+        setError(result.message || 'Failed to start tracking');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to add token');
+    }
+
+    setAddingToken(false);
+  };
+
+  const handleStopTracking = async (tokenAddress) => {
+    if (!confirm(`Stop tracking ${tokenAddress.slice(0, 8)}...${tokenAddress.slice(-4)}?`)) {
+      return;
+    }
+
+    try {
+      await stopTrackingToken(tokenAddress);
+      // Reload dashboard to reflect the removal
+      setTimeout(() => loadDashboard(), 1000);
+    } catch (err) {
+      setError(err.message || 'Failed to stop tracking');
+    }
+  };
+
+  const handleAnalyzeToken = (tokenAddress) => {
+    navigate(`/?token=${tokenAddress}`);
+  };
+
+  const getDirectionColor = (direction) => {
+    if (direction === 'strong_bullish') return 'text-green-400 bg-green-400/20 border-green-400';
+    if (direction === 'bullish') return 'text-green-300 bg-green-400/10 border-green-400/60';
+    if (direction === 'neutral') return 'text-yellow-400 bg-yellow-400/10 border-yellow-400';
+    if (direction === 'bearish') return 'text-red-300 bg-red-400/10 border-red-400/60';
+    if (direction === 'strong_bearish') return 'text-red-400 bg-red-400/20 border-red-400';
+    return 'text-red-600 bg-red-600/30 border-red-600';
+  };
+
+  const getActionCodeColor = (code) => {
+    if (code === 'BUY') return 'bg-green-400/20 text-green-400 border-green-400/50';
+    if (code === 'SELL') return 'bg-red-400/20 text-red-400 border-red-400/50';
+    if (code === 'EXIT') return 'bg-red-600/30 text-red-600 border-red-600';
+    if (code === 'AVOID') return 'bg-orange-400/20 text-orange-400 border-orange-400/50';
+    return 'bg-cyan-400/20 text-cyan-400 border-cyan-400/50';
+  };
+
+  return (
+    <div className="min-h-screen bg-black text-green-400 font-mono p-4">
+      <div className="max-w-7xl mx-auto">
+        
+        {/* Header */}
+        <div className="border-2 border-green-400 rounded-lg p-4 mb-6 bg-black/50 backdrop-blur">
+          <div className="flex flex-col md:flex-row items-center justify-between mb-4 gap-4">
+            <div className="flex items-center gap-3">
+              <Activity className="w-8 h-8 text-cyan-400 animate-pulse" />
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                  TRACKING DASHBOARD
+                </h1>
+                <p className="text-xs text-green-400/60">Real-time monitoring of tracked tokens</p>
+              </div>
+            </div>
+            
+            {/* Navigation */}
+            <div className="flex gap-2 border border-green-400/30 rounded p-1">
+              <Link to="/" className="px-3 py-1 text-green-400 text-sm font-bold rounded hover:bg-green-400/10">
+                TERMINAL
+              </Link>
+              <Link to="/marketplace" className="px-3 py-1 text-green-400 text-sm font-bold rounded hover:bg-green-400/10">
+                MARKETPLACE
+              </Link>
+              <Link to="/dashboard" className="px-3 py-1 bg-green-400 text-black text-sm font-bold rounded">
+                DASHBOARD
+              </Link>
+            </div>
+          </div>
+
+          {/* Controls Bar */}
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-green-400" />
+                <span className="text-sm text-green-400/60">
+                  {trackedTokens.length} token{trackedTokens.length !== 1 ? 's' : ''} tracked
+                </span>
+              </div>
+              <button
+                onClick={() => loadDashboard()}
+                disabled={refreshing || loading}
+                className="px-3 py-1 bg-green-400/10 border border-green-400/30 rounded text-sm text-green-400 hover:bg-green-400/20 transition-all disabled:opacity-50 flex items-center gap-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Refreshing...' : 'Refresh'}
+              </button>
+            </div>
+
+            {/* Add Token Input */}
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={addTokenAddress}
+                onChange={(e) => setAddTokenAddress(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && !addingToken && handleAddToken()}
+                placeholder="Add token address..."
+                className="bg-black border border-green-400/30 rounded px-3 py-1 text-sm text-green-400 placeholder-green-400/30 focus:border-green-400 focus:outline-none w-64"
+              />
+              <button
+                onClick={handleAddToken}
+                disabled={addingToken || !addTokenAddress.trim()}
+                className="px-4 py-1 bg-green-400 text-black text-sm font-bold rounded hover:bg-green-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {addingToken ? 'Adding...' : 'Track'}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div className="mt-3 flex items-center gap-2 text-red-400 text-sm">
+              <AlertCircle className="w-4 h-4" />
+              {error}
+            </div>
+          )}
+        </div>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="border-2 border-green-400/30 rounded-lg p-12 text-center bg-black/50">
+            <RefreshCw className="w-16 h-16 mx-auto mb-4 text-green-400 animate-spin" />
+            <h3 className="text-xl font-bold text-green-400/60 mb-2">LOADING DASHBOARD...</h3>
+            <p className="text-green-400/40 text-sm">Fetching tracked tokens and signals</p>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && trackedTokens.length === 0 && (
+          <div className="border-2 border-green-400/30 rounded-lg p-12 text-center bg-black/50">
+            <Brain className="w-16 h-16 mx-auto mb-4 text-green-400/30" />
+            <h3 className="text-xl font-bold text-green-400/60 mb-2">NO TOKENS TRACKED</h3>
+            <p className="text-green-400/40 text-sm mb-4">
+              Add a token address above to start real-time tracking
+            </p>
+            <p className="text-green-400/40 text-xs">
+              Tracked tokens will appear here with live fusion signals
+            </p>
+          </div>
+        )}
+
+        {/* Token Grid */}
+        {!loading && trackedTokens.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+            {trackedTokens.map((token) => {
+              const addr = token.token_address || token.address;
+              const signalData = tokenSignals[addr];
+              const signal = signalData?.signal;
+              const hasError = signalData?.error;
+
+              return (
+                <div
+                  key={addr}
+                  className="border-2 border-green-400/30 rounded-lg bg-black/50 hover:border-green-400 transition-all overflow-hidden"
+                >
+                  {/* Token Header */}
+                  <div className="p-4 border-b border-green-400/30 bg-green-400/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-mono text-cyan-400">
+                          {addr.slice(0, 6)}...{addr.slice(-4)}
+                        </span>
+                        <button
+                          onClick={() => navigator.clipboard.writeText(addr)}
+                          className="p-1 hover:bg-green-400/10 rounded transition-all"
+                        >
+                          <Copy className="w-3 h-3 text-green-400/50 hover:text-green-400" />
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => handleStopTracking(addr)}
+                        className="text-xs text-red-400/60 hover:text-red-400 transition-colors"
+                      >
+                        Stop
+                      </button>
+                    </div>
+                    {token.started_at && (
+                      <div className="text-xs text-green-400/60">
+                        Tracking for {Math.floor((Date.now() - token.started_at * 1000) / 60000)}m
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Signal Display */}
+                  {hasError ? (
+                    <div className="p-4">
+                      <div className="text-sm text-red-400">Signal unavailable</div>
+                      <div className="text-xs text-green-400/60 mt-1">{signalData.error}</div>
+                    </div>
+                  ) : signal ? (
+                    <div className="p-4 space-y-3">
+                      {/* Direction Badge */}
+                      <div className="flex items-center justify-between">
+                        <span className={`text-xs font-bold px-3 py-1 rounded border ${getDirectionColor(signal.direction)}`}>
+                          {signal.direction.toUpperCase().replace('_', ' ')}
+                        </span>
+                        <span className="text-lg font-bold text-purple-400">
+                          {(signal.confidence * 100).toFixed(0)}%
+                        </span>
+                      </div>
+
+                      {/* Action Recommendation */}
+                      <div className={`border rounded p-3 ${getActionCodeColor(signal.action_code)}`}>
+                        <div className="text-xs font-bold mb-1">{signal.action_code}</div>
+                        <div className="text-xs opacity-80">{signal.action}</div>
+                      </div>
+
+                      {/* Systems Agreement */}
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-green-400/60">Systems:</span>
+                        <span className={signal.systems_agree ? 'text-green-400' : 'text-orange-400'}>
+                          {signal.systems_agree ? '✓ Agree' : '⚠ Disagree'}
+                        </span>
+                      </div>
+
+                      {/* Data Sources */}
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className={`px-2 py-0.5 rounded ${signalData.has_metrics ? 'bg-cyan-400/20 text-cyan-400' : 'bg-red-400/20 text-red-400'}`}>
+                          {signalData.has_metrics ? 'Metrics ✓' : 'No Metrics'}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded ${signalData.has_slippage ? 'bg-green-400/20 text-green-400' : 'bg-red-400/20 text-red-400'}`}>
+                          {signalData.has_slippage ? 'Slippage ✓' : 'No Slippage'}
+                        </span>
+                      </div>
+
+                      {/* Risk Level */}
+                      {signal.risk_level && (
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-green-400/60">Risk:</span>
+                          <span className={`font-bold ${
+                            signal.risk_level === 'extreme' ? 'text-red-600' :
+                            signal.risk_level === 'high' ? 'text-red-400' :
+                            signal.risk_level === 'medium' ? 'text-yellow-400' :
+                            'text-green-400'
+                          }`}>
+                            {signal.risk_level.toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Analyze Button */}
+                      <button
+                        onClick={() => handleAnalyzeToken(addr)}
+                        className="w-full px-3 py-2 bg-green-400 text-black text-sm font-bold rounded hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                      >
+                        <Brain className="w-4 h-4" />
+                        ANALYZE
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center">
+                      <RefreshCw className="w-8 h-8 mx-auto mb-2 text-green-400/30 animate-spin" />
+                      <div className="text-xs text-green-400/60">Loading signal...</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ ============================================
 // MAIN APP
 // ============================================
 
