@@ -19,7 +19,10 @@ import {
   getPrivacyAnalysis,
   getFusedSignal,
   getBatchFusedSignals,
-  getFusedSignalExplanation
+  getFusedSignalExplanation,
+  getTrackingStatus,
+  startTrackingToken,
+  stopTrackingToken
 } from './api';
 import { HashRouter, Routes, Route, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AccessControl } from './AccessControl';
