@@ -166,22 +166,30 @@ function Terminal() {
             return;
           }
     
-          // Store the complete fusion signal
+    // Store the complete fusion signal
           setFusedSignal(fusionResult.signal);
     
+    // NEW: Also fetch realtime metrics to get transition predictions
+          try {
+            const metricsData = await getRealtimeMetrics(tokenInfo.contractAddress);
+            setRealtimeMetrics(metricsData); // Store predictions data
+          } catch (metricsError) {
+            console.log('No prediction data available yet:', metricsError);
+      // This is fine - predictions might not exist for new tokens
+            setRealtimeMetrics(null);
+          }
+    
     // Also maintain the old coinScore format for the header cards
-    // This lets us keep the existing token info display working
           setCoinScore({
             overall: Math.round(fusionResult.signal.confidence * 100),
             smartMoney: '0.0',
             avgWinRate: '0.0',
             rating: fusionResult.signal.direction.toUpperCase().replace('_', ' '),
-            privacyMetrics: null // Clear old privacy metrics since we're using fusion now
+            privacyMetrics: null
           });
     
-          // Privacy mode doesn't analyze individual wallets
+    // Privacy mode doesn't analyze individual wallets
           setWalletAnalysis([]);
-    
           setLoading(false);
           setIsScanning(false);
           if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
@@ -195,7 +203,8 @@ function Terminal() {
           if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
           return;
         }
-      }  
+      }
+      
 
       // Step 3: Wallet Analysis Mode
       const holdersCacheKey = getCacheKey('holders', tokenInfo.contractAddress);
