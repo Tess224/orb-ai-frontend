@@ -336,6 +336,39 @@ export const getFusedSignal = async (tokenAddress, forceRefresh = false) => {
 };
 
 /**
+ * Get real-time metrics including transition matrix predictions
+ * This endpoint returns the MetricsSnapshot which contains:
+ * - Current phase classification
+ * - Real-time metric values (VTS, PII, VEI)
+ * - Transition predictions from the learned matrix
+ * - Confidence scores for predictions
+ */
+export const getRealtimeMetrics = async (tokenAddress) => {
+  try {
+    const response = await fetch(`${BACKEND_URL}/metrics/realtime/${tokenAddress}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    if (!response.ok) {
+      // If we get a 404, it means no metrics exist yet for this token
+      if (response.status === 404) {
+        console.log(`No metrics available yet for ${tokenAddress}`);
+        return null;
+      }
+      throw new Error(`Metrics fetch failed: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching realtime metrics:', error);
+    // Return null instead of throwing - this lets the UI gracefully handle missing data
+    return null;
+  }
+};
+
+/**
  * Get detailed explanation of fused signal with natural language
  * Provides human-readable breakdown of why the signal was generated
  */
