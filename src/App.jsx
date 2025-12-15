@@ -1030,6 +1030,129 @@ function Terminal() {
           </div>  
         )}
 
+        {/* Transition Matrix Predictions - NEW SECTION */}
+{realtimeMetrics?.predictions && (
+  <div className="border-2 border-purple-400/30 rounded-lg overflow-hidden bg-purple-400/5">
+    <div className="p-4 border-b border-purple-400/30">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Brain className="w-5 h-5 text-purple-400" />
+          <div>
+            <div className="text-sm font-bold text-purple-400">TRANSITION PREDICTIONS</div>
+            <div className="text-xs text-green-400/60">
+              What phase transitions are likely next
+            </div>
+          </div>
+        </div>
+        {realtimeMetrics.predictions.transition_observations > 0 && (
+          <span className="text-xs text-green-400/60">
+            Based on {realtimeMetrics.predictions.transition_observations} historical patterns
+          </span>
+        )}
+      </div>
+    </div>
+    
+    <div className="p-4 space-y-4">
+      {/* Check if we have actual predictions */}
+      {realtimeMetrics.predictions.next_phase_probabilities && 
+       Object.keys(realtimeMetrics.predictions.next_phase_probabilities).length > 0 ? (
+        <>
+          {/* Confidence Banner */}
+          <div className="bg-black/30 rounded p-3 border border-purple-400/20">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-green-400/60">Prediction Confidence</span>
+              <span className="text-2xl font-bold text-purple-400">
+                {(realtimeMetrics.predictions.transition_confidence * 100).toFixed(0)}%
+              </span>
+            </div>
+            <div className="w-full bg-black border border-purple-400/30 rounded-full h-2 overflow-hidden">
+              <div 
+                className={`h-full transition-all duration-500 ${
+                  realtimeMetrics.predictions.transition_confidence > 0.7 
+                    ? 'bg-gradient-to-r from-green-400 to-emerald-500' 
+                    : realtimeMetrics.predictions.transition_confidence > 0.5
+                    ? 'bg-gradient-to-r from-yellow-400 to-orange-400'
+                    : 'bg-gradient-to-r from-red-400 to-pink-500'
+                }`}
+                style={{ width: `${realtimeMetrics.predictions.transition_confidence * 100}%` }}
+              />
+            </div>
+            <div className="text-xs text-green-400/60 mt-1">
+              {realtimeMetrics.predictions.transition_confidence > 0.7 
+                ? 'High confidence - matrix has seen similar patterns many times' 
+                : realtimeMetrics.predictions.transition_confidence > 0.5
+                ? 'Medium confidence - some historical precedent exists'
+                : 'Low confidence - limited historical data for this pattern'}
+            </div>
+          </div>
+          
+          {/* Phase Probability Bars */}
+          <div className="space-y-2">
+            <div className="text-xs font-bold text-green-400/60 mb-3">
+              Likely Next Phases
+            </div>
+            {Object.entries(realtimeMetrics.predictions.next_phase_probabilities)
+              .sort((a, b) => b[1] - a[1]) // Sort by probability, highest first
+              .map(([phase, probability]) => (
+                <div key={phase} className="bg-black/20 rounded p-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm text-green-400 capitalize font-bold">
+                      {phase.replace('_', ' ')}
+                    </span>
+                    <span className="text-lg font-bold text-purple-400">
+                      {(probability * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-black border border-purple-400/30 rounded-full h-2">
+                    <div 
+                      className="h-full bg-gradient-to-r from-purple-400 to-pink-400 rounded-full transition-all duration-500"
+                      style={{ width: `${probability * 100}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+          </div>
+          
+          {/* Interpretation Helper */}
+          <div className="bg-cyan-400/10 border border-cyan-400/30 rounded p-3">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-cyan-400/80">
+                <span className="font-bold">What this means:</span> The matrix has analyzed 
+                {' '}{realtimeMetrics.predictions.transition_observations} similar historical 
+                situations and predicts the most likely next phase is{' '}
+                <span className="font-bold">
+                  {Object.entries(realtimeMetrics.predictions.next_phase_probabilities)
+                    .sort((a, b) => b[1] - a[1])[0]?.[0].replace('_', ' ')}
+                </span>
+                {' '}with{' '}
+                <span className="font-bold">
+                  {(Object.entries(realtimeMetrics.predictions.next_phase_probabilities)
+                    .sort((a, b) => b[1] - a[1])[0]?.[1] * 100).toFixed(0)}%
+                </span>
+                {' '}probability.
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        /* No Predictions Available State */
+        <div className="text-center py-6">
+          <Brain className="w-12 h-12 mx-auto mb-3 text-purple-400/30" />
+          <div className="text-sm text-green-400/60 mb-2">
+            No Predictions Available Yet
+          </div>
+          <div className="text-xs text-green-400/40">
+            {realtimeMetrics.predictions.transition_observations === 0 
+              ? 'The matrix needs more historical data to generate predictions for this token\'s current state'
+              : 'Building the transition matrix will enable predictions'}
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+)}
+              
         {/* Wallet Analysis Table */}
         {walletAnalysis.length > 0 && !privacyMode && (
           <div className="border-2 border-green-400/30 rounded-lg bg-black/50 overflow-hidden">
