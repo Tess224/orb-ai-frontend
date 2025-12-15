@@ -78,6 +78,7 @@ function Terminal() {
   const [analysisProgress, setAnalysisProgress] = useState({ current: 0, total: 0 });
   // State for fusion signal (privacy mode enhanced analysis)
   const [fusedSignal, setFusedSignal] = useState(null);
+  const [realtimeMetrics, setRealtimeMetrics] = useState(null); // NEW: Store metrics with predictions
   const [showMetricsDetail, setShowMetricsDetail] = useState(false);
   const [showSlippageDetail, setShowSlippageDetail] = useState(false);
 
