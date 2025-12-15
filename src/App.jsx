@@ -1151,7 +1151,7 @@ function Terminal() {
               )}
             </div>
           </div>
-       v)}
+       )}
               
         {/* Wallet Analysis Table */}
         {walletAnalysis.length > 0 && !privacyMode && (
