@@ -21,6 +21,7 @@ import {
   getBatchFusedSignals,
   getFusedSignalExplanation,
   getTrackingStatus,
+  getRealtimeMetrics,
   startTrackingToken,
   stopTrackingToken
 } from './api';
