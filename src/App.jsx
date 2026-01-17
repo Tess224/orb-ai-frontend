@@ -23,15 +23,13 @@ import {
   getTrackingStatus,
   getRealtimeMetrics,
   startTrackingToken,
-  stopTrackingToken,
-  enableTokenAlerts,     
-  getTokenAlerts   
+  stopTrackingToken
 } from './api';
 import { HashRouter, Routes, Route, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AccessControl } from './AccessControl';
 import { SimpleWallet } from './SimpleWallet';
 import { AlertButton } from './components/AlertButton';
-import { requestNotificationPermission, showNotification, hasNotificationPermission } from './notifications';
+// Note: Notifications are handled internally by AlertButton component
 // ============================================
 // CACHE SYSTEM
 // ============================================
@@ -1572,8 +1570,7 @@ function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [addTokenAddress, setAddTokenAddress] = useState('');
   const [addingToken, setAddingToken] = useState(false);
-  const [lastAlertCheck, setLastAlertCheck] = useState({});
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  // NOTE: Alert polling is handled by AlertButton component - no duplicate polling here
 
   // Fetch tracked tokens and their signals on component mount
   useEffect(() => {
@@ -1587,92 +1584,8 @@ function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-// Request notification permission when component mounts
-useEffect(() => {
-  const setupNotifications = async () => {
-    const granted = await requestNotificationPermission();
-    setNotificationsEnabled(granted);
-    if (granted) {
-      console.log('✅ Browser notifications enabled');
-    } else {
-      console.warn('⚠️ Browser notifications denied');
-    }
-  };
-  
-  setupNotifications();
-}, []);
-
-// Poll for alerts every 10 seconds for tracked tokens
-useEffect(() => {
-  if (!notificationsEnabled || !trackedTokens || trackedTokens.length === 0) {
-    return;
-  }
-
-  const checkAlerts = async () => {
-    for (const token of trackedTokens) {
-      // Handle both possible property names from backend
-      const addr = token.token_address || token.address;
-      
-      if (!addr) {
-        console.error('Token has no address:', token);
-        continue;
-      }
-      
-      try {
-        const response = await getTokenAlerts(addr, 5);
-        
-        if (response.success && response.alerts && response.alerts.length > 0) {
-          const lastSeen = lastAlertCheck[addr] || 0;
-          const newAlerts = response.alerts.filter(alert => alert.timestamp > lastSeen);
-          
-          if (newAlerts.length > 0) {
-            newAlerts.forEach(alert => {
-              showNotification(
-                `${token.symbol || addr.slice(0, 8)} Alert`,
-                alert.message,
-                alert.severity
-              );
-            });
-            
-            setLastAlertCheck(prev => ({
-              ...prev,
-              [addr]: newAlerts[0].timestamp
-            }));
-          }
-        }
-      } catch (error) {
-        console.error(`Error checking alerts for ${addr}:`, error);
-      }
-    }
-  };
-
-  checkAlerts();
-  const interval = setInterval(checkAlerts, 10000);
-
-  return () => clearInterval(interval);
-}, [trackedTokens, notificationsEnabled, lastAlertCheck]);
-
-// Enable alerts when tracking starts
-useEffect(() => {
-  if (!trackedTokens || trackedTokens.length === 0) return;
-  
-  trackedTokens.forEach(async (token) => {
-    // Handle both possible property names from backend
-    const addr = token.token_address || token.address;
-    
-    if (!addr) {
-      console.error('Token has no address:', token);
-      return;
-    }
-    
-    try {
-      await enableTokenAlerts(addr);
-      console.log(`✅ Alerts enabled for ${token.symbol || addr.slice(0, 8)}`);
-    } catch (error) {
-      console.error(`Failed to enable alerts for ${addr}:`, error);
-    }
-  });
-}, [trackedTokens]);
+  // NOTE: Notification permission and alert polling are handled by AlertButton component
+  // No duplicate polling here to avoid conflicts
 
 
   const loadDashboard = async (isAutoRefresh = false) => {
