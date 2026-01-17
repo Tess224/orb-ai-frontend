@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Bell, BellOff } from 'lucide-react';
 import { enableTokenAlerts, disableTokenAlerts, getAlertStatus, getTokenAlerts } from '../api';
+import { showNotification, initNotifications, requestNotificationPermission } from '../notifications';
 
 export function AlertButton({ tokenAddress }) {
   const [alertsEnabled, setAlertsEnabled] = useState(false);
@@ -8,8 +9,13 @@ export function AlertButton({ tokenAddress }) {
   const [recentAlerts, setRecentAlerts] = useState([]);
   const [showAlertList, setShowAlertList] = useState(false);
   
-  // Use a ref to track the timestamp - this persists across renders without causing re-renders
+  // Use a ref to track the timestamp - persists without causing re-renders
   const lastCheckedRef = useRef(null);
+  
+  // Initialize notifications on mount
+  useEffect(() => {
+    initNotifications();
+  }, []);
   
   // Check alert status on mount
   useEffect(() => {
@@ -28,31 +34,24 @@ export function AlertButton({ tokenAddress }) {
         if (result.success && result.alerts) {
           console.log('[AlertButton] Got alerts response:', result);
           
-          // Filter for NEW alerts only (after our last check)
+          // Filter for NEW alerts only
           const newAlerts = result.alerts.filter(alert => {
-            // If we haven't checked before, don't notify about old alerts
-            if (lastCheckedRef.current === null) {
-              return false;
-            }
+            if (lastCheckedRef.current === null) return false;
             return alert.timestamp > lastCheckedRef.current;
           });
 
           console.log('[AlertButton] New alerts since last check:', newAlerts.length);
 
-          // Show notification for each new alert
+          // Show notification for each new alert using the cross-platform function
           if (newAlerts.length > 0 && Notification.permission === 'granted') {
-            newAlerts.forEach(alert => {
+            for (const alert of newAlerts) {
               console.log('[AlertButton] Showing notification for:', alert.message);
-              try {
-                new Notification(`ORB Alert: ${tokenAddress.slice(0, 6)}...`, {
-                  body: alert.message,
-                  tag: `orb-${tokenAddress}-${alert.timestamp}`, // Unique per alert
-                  requireInteraction: alert.severity === 'critical',
-                });
-              } catch (err) {
-                console.error('[AlertButton] Notification error:', err);
-              }
-            });
+              await showNotification(
+                `ORB: ${tokenAddress.slice(0, 6)}...`,
+                alert.message,
+                alert.severity
+              );
+            }
           }
 
           // Update timestamp AFTER checking
@@ -66,7 +65,7 @@ export function AlertButton({ tokenAddress }) {
       }
     };
 
-    // Set initial timestamp to NOW so we only get future alerts
+    // Set initial timestamp to NOW
     lastCheckedRef.current = Date.now() / 1000;
     
     // Poll immediately, then every 10 seconds
@@ -90,26 +89,6 @@ export function AlertButton({ tokenAddress }) {
     }
   };
 
-  const requestNotificationPermission = async () => {
-    console.log('[AlertButton] Requesting notification permission...');
-    if (!('Notification' in window)) {
-      alert('Your browser does not support notifications');
-      return false;
-    }
-    
-    if (Notification.permission === 'granted') {
-      return true;
-    }
-    
-    if (Notification.permission !== 'denied') {
-      const permission = await Notification.requestPermission();
-      console.log('[AlertButton] Permission result:', permission);
-      return permission === 'granted';
-    }
-    
-    return false;
-  };
-
   const toggleAlerts = async () => {
     setLoading(true);
     try {
@@ -128,7 +107,6 @@ export function AlertButton({ tokenAddress }) {
         
         if (result.success) {
           setAlertsEnabled(true);
-          // Reset timestamp so we only notify about future alerts
           lastCheckedRef.current = Date.now() / 1000;
         }
       } else {
@@ -148,23 +126,24 @@ export function AlertButton({ tokenAddress }) {
     }
   };
 
-  // Test notification - simplified version
-  const testNotification = () => {
+  // Test notification using the cross-platform function
+  const testNotification = async () => {
     if (Notification.permission !== 'granted') {
       alert('Notification permission not granted. Click ALERTS OFF first to request permission.');
       return;
     }
     
     console.log('[AlertButton] Sending test notification...');
-    try {
-      const n = new Notification('ORB Test Alert', {
-        body: 'If you see this, notifications are working!',
-        tag: 'test-' + Date.now(),
-      });
-      console.log('[AlertButton] Test notification created:', n);
-    } catch (err) {
-      console.error('[AlertButton] Test notification failed:', err);
-      alert('Notification failed: ' + err.message);
+    const result = await showNotification(
+      'ORB Test',
+      'If you see this, notifications work!',
+      'medium'
+    );
+    
+    if (result) {
+      console.log('[AlertButton] Test notification sent successfully');
+    } else {
+      alert('Notification failed - check console for details');
     }
   };
 
