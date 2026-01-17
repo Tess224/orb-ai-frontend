@@ -432,7 +432,57 @@ export const checkBackendHealth = async () => {
   }
 };
 
+// ============================================
 
+/**
+ * Enable alerts for a token
+ */
+export const enableTokenAlerts = async (tokenAddress) => {
+  const response = await fetch(`${BACKEND_URL}/alerts/enable`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token_address: tokenAddress })
+  });
+  return await response.json();
+};
+
+/**
+ * Disable alerts for a token
+ */
+export const disableTokenAlerts = async (tokenAddress) => {
+  const response = await fetch(`${BACKEND_URL}/alerts/disable`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token_address: tokenAddress })
+  });
+  return await response.json();
+};
+
+/**
+ * Check if alerts are enabled for a token
+ */
+export const getAlertStatus = async (tokenAddress) => {
+  const response = await fetch(`${BACKEND_URL}/alerts/status/${tokenAddress}`);
+  return await response.json();
+};
+
+/**
+ * Get alerts for a token
+ */
+export const getTokenAlerts = async (tokenAddress, limit = 20) => {
+  const response = await fetch(`${BACKEND_URL}/alerts/get/${tokenAddress}?limit=${limit}`);
+  return await response.json();
+};
+
+/**
+ * Clear alerts for a token
+ */
+export const clearTokenAlerts = async (tokenAddress) => {
+  const response = await fetch(`${BACKEND_URL}/alerts/clear/${tokenAddress}`, {
+    method: 'POST'
+  });
+  return await response.json();
+};
 // ============================================
 // TRACKING STATUS & DASHBOARD FUNCTIONS
 // ============================================
