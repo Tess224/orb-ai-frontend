@@ -28,6 +28,7 @@ import {
 import { HashRouter, Routes, Route, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AccessControl } from './AccessControl';
 import { SimpleWallet } from './SimpleWallet';
+import { AlertButton } from './components/AlertButton';
 // ============================================
 // CACHE SYSTEM
 // ============================================
@@ -571,6 +572,10 @@ function Terminal() {
 
             {/* Metrics Card */}
             <div className="border-2 border-cyan-400/30 rounded-lg p-4 bg-black/50 space-y-3">
+              {/* Alert Control - Add this section */}
+              <div className="pb-3 border-b border-cyan-400/20">
+                <AlertButton tokenAddress={currentToken.contractAddress} />
+              </div>
               {privacyMode && coinScore.privacyMetrics ? (
                 <>
                   <div className="flex items-center justify-between">
