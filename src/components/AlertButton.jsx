@@ -1,76 +1,64 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Bell, BellOff } from 'lucide-react';
 import { enableTokenAlerts, disableTokenAlerts, getAlertStatus, getTokenAlerts } from '../api';
 
 export function AlertButton({ tokenAddress }) {
   const [alertsEnabled, setAlertsEnabled] = useState(false);
-  const [notificationPermission, setNotificationPermission] = useState('default');
   const [loading, setLoading] = useState(false);
   const [recentAlerts, setRecentAlerts] = useState([]);
   const [showAlertList, setShowAlertList] = useState(false);
-  const [lastCheckedTimestamp, setLastCheckedTimestamp] = useState(null); // NEW: Track when we last checked
-
-  // Check alert status and notification permission on mount
+  
+  // Use a ref to track the timestamp - this persists across renders without causing re-renders
+  const lastCheckedRef = useRef(null);
+  
+  // Check alert status on mount
   useEffect(() => {
     checkAlertStatus();
-    setNotificationPermission(Notification.permission);
   }, [tokenAddress]);
 
   // Poll for new alerts when enabled
   useEffect(() => {
-    if (!alertsEnabled) return;
+    if (!alertsEnabled || !tokenAddress) return;
 
     const pollAlerts = async () => {
       try {
         console.log('[AlertButton] Polling for alerts...', tokenAddress.slice(0, 8));
         const result = await getTokenAlerts(tokenAddress, 10);
         
-        if (result.success) {
+        if (result.success && result.alerts) {
           console.log('[AlertButton] Got alerts response:', result);
           
-          // NEW: Better logic for detecting new alerts
-          // Only show notifications for alerts that arrived after we started monitoring
+          // Filter for NEW alerts only (after our last check)
           const newAlerts = result.alerts.filter(alert => {
-            // If this is our first check, don't notify about old alerts
-            if (lastCheckedTimestamp === null) {
+            // If we haven't checked before, don't notify about old alerts
+            if (lastCheckedRef.current === null) {
               return false;
             }
-            // Only notify about alerts newer than our last check
-            return alert.timestamp > lastCheckedTimestamp;
+            return alert.timestamp > lastCheckedRef.current;
           });
 
           console.log('[AlertButton] New alerts since last check:', newAlerts.length);
 
-          // Update our last checked timestamp to now
-          setLastCheckedTimestamp(Date.now() / 1000);
-
-          // Show notification for new alerts
+          // Show notification for each new alert
           if (newAlerts.length > 0 && Notification.permission === 'granted') {
-            console.log('[AlertButton] Showing notification for:', newAlerts[0]);
-            
-            const latest = newAlerts[0];
-            const notification = new Notification(`ORB Alert: ${tokenAddress.slice(0, 6)}...`, {
-              body: latest.message,
-              icon: '/favicon.ico', // Use your actual icon path
-              tag: `orb-alert-${tokenAddress}`, // This prevents duplicate notifications
-              requireInteraction: latest.severity === 'critical',
-              badge: '/favicon.ico'
+            newAlerts.forEach(alert => {
+              console.log('[AlertButton] Showing notification for:', alert.message);
+              try {
+                new Notification(`ORB Alert: ${tokenAddress.slice(0, 6)}...`, {
+                  body: alert.message,
+                  tag: `orb-${tokenAddress}-${alert.timestamp}`, // Unique per alert
+                  requireInteraction: alert.severity === 'critical',
+                });
+              } catch (err) {
+                console.error('[AlertButton] Notification error:', err);
+              }
             });
-
-            // Log when notification is shown
-            notification.onshow = () => {
-              console.log('[AlertButton] Notification displayed!');
-            };
-
-            // Log if notification fails
-            notification.onerror = (error) => {
-              console.error('[AlertButton] Notification error:', error);
-            };
-          } else if (newAlerts.length > 0 && Notification.permission !== 'granted') {
-            console.warn('[AlertButton] Have new alerts but no notification permission');
           }
 
-          // Always update the recent alerts list so user can see them in the dropdown
+          // Update timestamp AFTER checking
+          lastCheckedRef.current = Date.now() / 1000;
+
+          // Always update the visible alerts list
           setRecentAlerts(result.alerts);
         }
       } catch (error) {
@@ -78,18 +66,18 @@ export function AlertButton({ tokenAddress }) {
       }
     };
 
-    // Set initial timestamp when we first enable alerts
-    setLastCheckedTimestamp(Date.now() / 1000);
+    // Set initial timestamp to NOW so we only get future alerts
+    lastCheckedRef.current = Date.now() / 1000;
     
-    // Do an initial poll immediately
+    // Poll immediately, then every 10 seconds
     pollAlerts();
-    
-    // Then poll every 10 seconds
     const interval = setInterval(pollAlerts, 10000);
+    
     return () => clearInterval(interval);
   }, [alertsEnabled, tokenAddress]);
 
   const checkAlertStatus = async () => {
+    if (!tokenAddress) return;
     try {
       console.log('[AlertButton] Checking alert status for:', tokenAddress.slice(0, 8));
       const result = await getAlertStatus(tokenAddress);
@@ -104,13 +92,22 @@ export function AlertButton({ tokenAddress }) {
 
   const requestNotificationPermission = async () => {
     console.log('[AlertButton] Requesting notification permission...');
-    if (Notification.permission === 'default') {
+    if (!('Notification' in window)) {
+      alert('Your browser does not support notifications');
+      return false;
+    }
+    
+    if (Notification.permission === 'granted') {
+      return true;
+    }
+    
+    if (Notification.permission !== 'denied') {
       const permission = await Notification.requestPermission();
       console.log('[AlertButton] Permission result:', permission);
-      setNotificationPermission(permission);
       return permission === 'granted';
     }
-    return Notification.permission === 'granted';
+    
+    return false;
   };
 
   const toggleAlerts = async () => {
@@ -126,24 +123,22 @@ export function AlertButton({ tokenAddress }) {
         }
 
         console.log('[AlertButton] Enabling alerts...');
-        // Enable alerts
         const result = await enableTokenAlerts(tokenAddress);
         console.log('[AlertButton] Enable result:', result);
         
         if (result.success) {
           setAlertsEnabled(true);
           // Reset timestamp so we only notify about future alerts
-          setLastCheckedTimestamp(Date.now() / 1000);
+          lastCheckedRef.current = Date.now() / 1000;
         }
       } else {
         console.log('[AlertButton] Disabling alerts...');
-        // Disable alerts
         const result = await disableTokenAlerts(tokenAddress);
         console.log('[AlertButton] Disable result:', result);
         
         if (result.success) {
           setAlertsEnabled(false);
-          setLastCheckedTimestamp(null);
+          lastCheckedRef.current = null;
         }
       }
     } catch (error) {
@@ -153,25 +148,23 @@ export function AlertButton({ tokenAddress }) {
     }
   };
 
-  // Test notification button - useful for debugging
+  // Test notification - simplified version
   const testNotification = () => {
-    if (Notification.permission === 'granted') {
-      console.log('[AlertButton] Sending test notification...');
-      const notification = new Notification('ORB Test Alert', {
-        body: 'This is a test notification. If you see this, notifications are working!',
-        icon: '/favicon.ico',
-        tag: 'test-notification'
+    if (Notification.permission !== 'granted') {
+      alert('Notification permission not granted. Click ALERTS OFF first to request permission.');
+      return;
+    }
+    
+    console.log('[AlertButton] Sending test notification...');
+    try {
+      const n = new Notification('ORB Test Alert', {
+        body: 'If you see this, notifications are working!',
+        tag: 'test-' + Date.now(),
       });
-      
-      notification.onshow = () => {
-        console.log('[AlertButton] Test notification displayed!');
-      };
-      
-      notification.onerror = (error) => {
-        console.error('[AlertButton] Test notification error:', error);
-      };
-    } else {
-      alert('Notification permission not granted');
+      console.log('[AlertButton] Test notification created:', n);
+    } catch (err) {
+      console.error('[AlertButton] Test notification failed:', err);
+      alert('Notification failed: ' + err.message);
     }
   };
 
@@ -198,7 +191,7 @@ export function AlertButton({ tokenAddress }) {
           )}
         </button>
 
-        {/* Test button - remove this after debugging */}
+        {/* Test button */}
         {alertsEnabled && (
           <button
             onClick={testNotification}
@@ -209,8 +202,8 @@ export function AlertButton({ tokenAddress }) {
         )}
       </div>
 
-      {alertsEnabled && notificationPermission !== 'granted' && (
-        <div className="absolute top-full mt-2 left-0 bg-yellow-600/20 border border-yellow-500 text-yellow-400 text-xs p-2 rounded whitespace-nowrap">
+      {alertsEnabled && Notification.permission !== 'granted' && (
+        <div className="absolute top-full mt-2 left-0 bg-yellow-600/20 border border-yellow-500 text-yellow-400 text-xs p-2 rounded whitespace-nowrap z-50">
           ⚠️ Enable browser notifications for alerts
         </div>
       )}
