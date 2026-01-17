@@ -1610,17 +1610,25 @@ useEffect(() => {
 
   const checkAlerts = async () => {
     for (const token of trackedTokens) {
+      // Handle both possible property names from backend
+      const addr = token.token_address || token.address;
+      
+      if (!addr) {
+        console.error('Token has no address:', token);
+        continue;
+      }
+      
       try {
-        const response = await getTokenAlerts(token.address, 5);
+        const response = await getTokenAlerts(addr, 5);
         
         if (response.success && response.alerts && response.alerts.length > 0) {
-          const lastSeen = lastAlertCheck[token.address] || 0;
+          const lastSeen = lastAlertCheck[addr] || 0;
           const newAlerts = response.alerts.filter(alert => alert.timestamp > lastSeen);
           
           if (newAlerts.length > 0) {
             newAlerts.forEach(alert => {
               showNotification(
-                `${token.symbol || token.address.slice(0, 8)} Alert`,
+                `${token.symbol || addr.slice(0, 8)} Alert`,
                 alert.message,
                 alert.severity
               );
@@ -1628,12 +1636,12 @@ useEffect(() => {
             
             setLastAlertCheck(prev => ({
               ...prev,
-              [token.address]: newAlerts[0].timestamp
+              [addr]: newAlerts[0].timestamp
             }));
           }
         }
       } catch (error) {
-        console.error(`Error checking alerts for ${token.address}:`, error);
+        console.error(`Error checking alerts for ${addr}:`, error);
       }
     }
   };
@@ -1649,11 +1657,19 @@ useEffect(() => {
   if (!trackedTokens || trackedTokens.length === 0) return;
   
   trackedTokens.forEach(async (token) => {
+    // Handle both possible property names from backend
+    const addr = token.token_address || token.address;
+    
+    if (!addr) {
+      console.error('Token has no address:', token);
+      return;
+    }
+    
     try {
-      await enableTokenAlerts(token.address);
-      console.log(`✅ Alerts enabled for ${token.symbol || token.address.slice(0, 8)}`);
+      await enableTokenAlerts(addr);
+      console.log(`✅ Alerts enabled for ${token.symbol || addr.slice(0, 8)}`);
     } catch (error) {
-      console.error(`Failed to enable alerts for ${token.address}:`, error);
+      console.error(`Failed to enable alerts for ${addr}:`, error);
     }
   });
 }, [trackedTokens]);
