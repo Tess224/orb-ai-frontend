@@ -119,3 +119,4 @@ export const showNotification = async (title, body, severity = 'medium') => {
 export const hasNotificationPermission = () => {
   return Notification.permission === 'granted';
 };
+ 
