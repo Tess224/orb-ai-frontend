@@ -561,3 +561,48 @@ export const stopTrackingToken = async (tokenAddress) => {
     throw error;
   }
 };
+
+/**
+ * Enable alerts for a token
+ * Tells backend to start tracking changes for notifications
+ */
+export const enableTokenAlerts = async (tokenAddress) => {
+  try {
+    const response = await fetch(`${BACKEND_URL}/alerts/enable`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token_address: tokenAddress })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Enable alerts failed: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error enabling alerts:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get alerts for a token
+ * Returns recent alerts that should trigger notifications
+ */
+export const getTokenAlerts = async (tokenAddress, limit = 20) => {
+  try {
+    const response = await fetch(`${BACKEND_URL}/alerts/get/${tokenAddress}?limit=${limit}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Get alerts failed: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting alerts:', error);
+    throw error;
+  }
+};
