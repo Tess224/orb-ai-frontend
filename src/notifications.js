@@ -1,8 +1,6 @@
 // src/notifications.js
 // Simple notification system for ORB alerts
 
-let permissionGranted = false;
-
 export const requestNotificationPermission = async () => {
   if (!('Notification' in window)) {
     console.warn('Browser does not support notifications');
@@ -10,23 +8,22 @@ export const requestNotificationPermission = async () => {
   }
 
   if (Notification.permission === 'granted') {
-    permissionGranted = true;
     return true;
   }
 
   if (Notification.permission !== 'denied') {
     const permission = await Notification.requestPermission();
-    permissionGranted = (permission === 'granted');
-    return permissionGranted;
+    return permission === 'granted';
   }
 
   return false;
 };
 
 export const showNotification = (title, body, severity = 'medium') => {
-  if (!permissionGranted) {
+  // Always check current permission state
+  if (Notification.permission !== 'granted') {
     console.log('Notification permission not granted');
-    return;
+    return null;
   }
 
   const icon = severity === 'critical' || severity === 'high' 
@@ -35,21 +32,26 @@ export const showNotification = (title, body, severity = 'medium') => {
     ? '⚠️' 
     : 'ℹ️';
 
-  const notification = new Notification(`${icon} ${title}`, {
-    body: body,
-    icon: '/favicon.ico',
-    badge: '/favicon.ico',
-    tag: 'orb-alert',
-    requireInteraction: severity === 'critical',
-  });
+  try {
+    const notification = new Notification(`${icon} ${title}`, {
+      body: body,
+      // Don't use favicon.ico - it 404s. Use a data URL or no icon.
+      tag: `orb-alert-${Date.now()}`, // Unique tag to allow multiple notifications
+      requireInteraction: severity === 'critical',
+    });
 
-  if (severity !== 'critical') {
-    setTimeout(() => notification.close(), 10000);
+    // Auto-close non-critical notifications after 10 seconds
+    if (severity !== 'critical') {
+      setTimeout(() => notification.close(), 10000);
+    }
+
+    return notification;
+  } catch (error) {
+    console.error('Failed to create notification:', error);
+    return null;
   }
-
-  return notification;
 };
 
 export const hasNotificationPermission = () => {
-  return permissionGranted;
+  return Notification.permission === 'granted';
 };
