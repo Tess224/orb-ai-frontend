@@ -1,20 +1,35 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, BellOff } from 'lucide-react';
+import { Bell, BellOff, Wifi, WifiOff } from 'lucide-react';
 import { enableTokenAlerts, disableTokenAlerts, getAlertStatus, getTokenAlerts } from '../api';
-import { showNotification, initNotifications, requestNotificationPermission } from '../notifications';
+import { 
+  showNotification, 
+  initNotifications, 
+  requestNotificationPermission,
+  subscribeToPush,
+  unsubscribeFromPush,
+  isPushSubscribed,
+  testPushNotification
+} from '../notifications';
 
 export function AlertButton({ tokenAddress }) {
   const [alertsEnabled, setAlertsEnabled] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [recentAlerts, setRecentAlerts] = useState([]);
   const [showAlertList, setShowAlertList] = useState(false);
   
-  // Use a ref to track the timestamp - persists without causing re-renders
+  // Use ref for timestamp to persist across renders without causing re-renders
   const lastCheckedRef = useRef(null);
   
   // Initialize notifications on mount
   useEffect(() => {
-    initNotifications();
+    const init = async () => {
+      await initNotifications();
+      // Check if already subscribed to push
+      const subscribed = await isPushSubscribed();
+      setPushEnabled(subscribed);
+    };
+    init();
   }, []);
   
   // Check alert status on mount
@@ -22,7 +37,7 @@ export function AlertButton({ tokenAddress }) {
     checkAlertStatus();
   }, [tokenAddress]);
 
-  // Poll for new alerts when enabled
+  // Poll for new alerts when enabled (backup for when push isn't working)
   useEffect(() => {
     if (!alertsEnabled || !tokenAddress) return;
 
@@ -32,9 +47,9 @@ export function AlertButton({ tokenAddress }) {
         const result = await getTokenAlerts(tokenAddress, 10);
         
         if (result.success && result.alerts) {
-          console.log('[AlertButton] Got alerts response:', result);
+          console.log('[AlertButton] Got alerts:', result.alerts.length);
           
-          // Filter for NEW alerts only
+          // Filter for truly NEW alerts
           const newAlerts = result.alerts.filter(alert => {
             if (lastCheckedRef.current === null) return false;
             return alert.timestamp > lastCheckedRef.current;
@@ -42,10 +57,9 @@ export function AlertButton({ tokenAddress }) {
 
           console.log('[AlertButton] New alerts since last check:', newAlerts.length);
 
-          // Show notification for each new alert using the cross-platform function
-          if (newAlerts.length > 0 && Notification.permission === 'granted') {
+          // Show notification for each new alert (only if push not enabled - push handles its own)
+          if (newAlerts.length > 0 && Notification.permission === 'granted' && !pushEnabled) {
             for (const alert of newAlerts) {
-              console.log('[AlertButton] Showing notification for:', alert.message);
               await showNotification(
                 `ORB: ${tokenAddress.slice(0, 6)}...`,
                 alert.message,
@@ -54,18 +68,16 @@ export function AlertButton({ tokenAddress }) {
             }
           }
 
-          // Update timestamp AFTER checking
+          // Update timestamp
           lastCheckedRef.current = Date.now() / 1000;
-
-          // Always update the visible alerts list
           setRecentAlerts(result.alerts);
         }
       } catch (error) {
-        console.error('[AlertButton] Error polling alerts:', error);
+        console.error('[AlertButton] Polling error:', error);
       }
     };
 
-    // Set initial timestamp to NOW
+    // Set initial timestamp
     lastCheckedRef.current = Date.now() / 1000;
     
     // Poll immediately, then every 10 seconds
@@ -73,27 +85,26 @@ export function AlertButton({ tokenAddress }) {
     const interval = setInterval(pollAlerts, 10000);
     
     return () => clearInterval(interval);
-  }, [alertsEnabled, tokenAddress]);
+  }, [alertsEnabled, tokenAddress, pushEnabled]);
 
   const checkAlertStatus = async () => {
     if (!tokenAddress) return;
     try {
-      console.log('[AlertButton] Checking alert status for:', tokenAddress.slice(0, 8));
       const result = await getAlertStatus(tokenAddress);
       if (result.success) {
-        console.log('[AlertButton] Alert status:', result.alerts_enabled);
         setAlertsEnabled(result.alerts_enabled);
       }
     } catch (error) {
-      console.error('[AlertButton] Error checking alert status:', error);
+      console.error('[AlertButton] Status check error:', error);
     }
   };
 
+  // Toggle alerts on/off
   const toggleAlerts = async () => {
     setLoading(true);
     try {
       if (!alertsEnabled) {
-        // Request notification permission first
+        // Request permission first
         const hasPermission = await requestNotificationPermission();
         if (!hasPermission) {
           alert('Please enable browser notifications to receive alerts');
@@ -101,55 +112,95 @@ export function AlertButton({ tokenAddress }) {
           return;
         }
 
-        console.log('[AlertButton] Enabling alerts...');
+        // Enable on backend
         const result = await enableTokenAlerts(tokenAddress);
-        console.log('[AlertButton] Enable result:', result);
-        
         if (result.success) {
           setAlertsEnabled(true);
           lastCheckedRef.current = Date.now() / 1000;
+          
+          // Offer to enable push notifications
+          if (!pushEnabled) {
+            const wantPush = confirm(
+              'Alerts enabled! Would you also like to receive notifications even when the browser is closed?\n\n' +
+              'This requires additional permission but ensures you never miss an alert.'
+            );
+            if (wantPush) {
+              await enablePush();
+            }
+          }
         }
       } else {
-        console.log('[AlertButton] Disabling alerts...');
+        // Disable alerts
         const result = await disableTokenAlerts(tokenAddress);
-        console.log('[AlertButton] Disable result:', result);
-        
         if (result.success) {
           setAlertsEnabled(false);
           lastCheckedRef.current = null;
         }
       }
     } catch (error) {
-      console.error('[AlertButton] Error toggling alerts:', error);
+      console.error('[AlertButton] Toggle error:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Test notification using the cross-platform function
+  // Enable Web Push notifications
+  const enablePush = async () => {
+    setLoading(true);
+    try {
+      const success = await subscribeToPush(tokenAddress);
+      if (success) {
+        setPushEnabled(true);
+        alert('✅ Push notifications enabled! You will receive alerts even when the browser is closed.');
+      } else {
+        alert('Failed to enable push notifications. Make sure notifications are allowed in your browser settings.');
+      }
+    } catch (error) {
+      console.error('[AlertButton] Push enable error:', error);
+      alert('Error enabling push: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Disable Web Push
+  const disablePush = async () => {
+    setLoading(true);
+    try {
+      await unsubscribeFromPush();
+      setPushEnabled(false);
+    } catch (error) {
+      console.error('[AlertButton] Push disable error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Test notification
   const testNotification = async () => {
     if (Notification.permission !== 'granted') {
-      alert('Notification permission not granted. Click ALERTS OFF first to request permission.');
+      alert('Notification permission not granted');
       return;
     }
-    
-    console.log('[AlertButton] Sending test notification...');
-    const result = await showNotification(
-      'ORB Test',
-      'If you see this, notifications work!',
-      'medium'
-    );
-    
-    if (result) {
-      console.log('[AlertButton] Test notification sent successfully');
+
+    if (pushEnabled) {
+      // Test via server push
+      console.log('[AlertButton] Testing push notification...');
+      const success = await testPushNotification();
+      if (!success) {
+        // Fallback to local notification
+        await showNotification('ORB Test', 'Push test failed, but local notifications work!', 'medium');
+      }
     } else {
-      alert('Notification failed - check console for details');
+      // Test local notification
+      await showNotification('ORB Test', 'If you see this, notifications work!', 'medium');
     }
   };
 
   return (
     <div className="relative">
       <div className="flex gap-2">
+        {/* Main Alert Toggle Button */}
         <button
           onClick={toggleAlerts}
           disabled={loading}
@@ -170,7 +221,26 @@ export function AlertButton({ tokenAddress }) {
           )}
         </button>
 
-        {/* Test button */}
+        {/* Push Notification Toggle (only show when alerts are on) */}
+        {alertsEnabled && (
+          <button
+            onClick={pushEnabled ? disablePush : enablePush}
+            disabled={loading}
+            title={pushEnabled ? 'Push ON - Click to disable' : 'Enable push notifications (works when browser closed)'}
+            className={`flex items-center gap-1 px-3 py-2 rounded-lg border-2 transition-all ${
+              pushEnabled
+                ? 'bg-blue-600/20 border-blue-500 text-blue-400 hover:bg-blue-600/30'
+                : 'bg-gray-600/20 border-gray-500 text-gray-400 hover:bg-gray-600/30'
+            }`}
+          >
+            {pushEnabled ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
+            <span className="text-xs font-bold hidden sm:inline">
+              {pushEnabled ? 'PUSH' : 'PUSH OFF'}
+            </span>
+          </button>
+        )}
+
+        {/* Test Button */}
         {alertsEnabled && (
           <button
             onClick={testNotification}
@@ -181,12 +251,21 @@ export function AlertButton({ tokenAddress }) {
         )}
       </div>
 
+      {/* Permission Warning */}
       {alertsEnabled && Notification.permission !== 'granted' && (
         <div className="absolute top-full mt-2 left-0 bg-yellow-600/20 border border-yellow-500 text-yellow-400 text-xs p-2 rounded whitespace-nowrap z-50">
           ⚠️ Enable browser notifications for alerts
         </div>
       )}
 
+      {/* Push Status Indicator */}
+      {alertsEnabled && pushEnabled && (
+        <div className="absolute top-full mt-2 left-0 bg-blue-600/20 border border-blue-500 text-blue-400 text-xs p-2 rounded whitespace-nowrap z-50">
+          ✅ Push enabled - Alerts work even when browser is closed
+        </div>
+      )}
+
+      {/* View Alerts Button */}
       {alertsEnabled && recentAlerts.length > 0 && (
         <button
           onClick={() => setShowAlertList(!showAlertList)}
@@ -196,8 +275,9 @@ export function AlertButton({ tokenAddress }) {
         </button>
       )}
 
+      {/* Alert List Dropdown */}
       {showAlertList && recentAlerts.length > 0 && (
-        <div className="absolute top-full mt-2 left-0 w-96 max-h-96 overflow-y-auto bg-black border-2 border-green-500 rounded-lg p-3 z-50">
+        <div className="absolute top-full mt-8 left-0 w-96 max-h-96 overflow-y-auto bg-black border-2 border-green-500 rounded-lg p-3 z-50">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-bold text-green-400">Recent Alerts</span>
             <button
