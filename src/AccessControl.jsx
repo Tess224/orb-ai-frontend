@@ -1,204 +1,341 @@
 import { useState, useEffect } from 'react';
-import { Brain } from 'lucide-react';
+import { Key, X, Info, RefreshCw } from 'lucide-react';
 
-// These are the access codes you'll give to testers
-// Each code has a name (to identify the person) and a daily limit
-const ACCESS_CODES = {
-    'ADMIN-2025': { name: 'Admin (You)', limit: 999 },
-    'ALPHA-TEST-1': { name: 'Alpha Tester 1', limit: 10 },
-    'ALPHA-TEST-2': { name: 'Alpha Tester 2', limit: 10 },
-    'BETA-TEST-1': { name: 'Beta Tester 1', limit: 5 },
-    // Add more codes here as you give them to people
-};
+const BACKEND_URL = 'https://orbonsolana.up.railway.app';
 
 /**
  * AccessControl Component
- * 
- * This component wraps your entire app and only shows it to people
- * who have a valid access code. Think of it like a bouncer at a club
- * checking IDs before letting people in.
- * 
- * How it works:
- * 1. User visits your site
- * 2. They see an access code entry screen
- * 3. They enter a code you gave them
- * 4. If the code is valid, they get access to your terminal
- * 5. The code is saved in their browser so they don't need to enter it again
+ *
+ * Provides a modal popup for users to enter their access code and view their rate limit status.
+ * Access codes are validated against the backend - no hardcoded codes in frontend!
  */
 export function AccessControl({ children }) {
-    // State to track if the user has entered a valid code
-    const [isAuthorized, setIsAuthorized] = useState(false);
-    
-    // State to store which code they used
-    const [accessCode, setAccessCode] = useState('');
-    
-    // State to store information about the user (name and limit)
-    const [userInfo, setUserInfo] = useState(null);
-    
-    // State for the input field where they type the code
-    const [inputValue, setInputValue] = useState('');
-    
-    // State to show error messages
-    const [error, setError] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [accessCode, setAccessCode] = useState('');
+  const [inputValue, setInputValue] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState(null); // { limit, used, remaining, resets_at }
 
-    /**
-     * When the component first loads, check if the user already
-     * entered a valid code before (saved in browser storage).
-     * 
-     * This is like checking if someone already has a wristband
-     * before asking them for ID again.
-     */
-    useEffect(() => {
-        const savedCode = localStorage.getItem('orb_access_code');
-        
-        if (savedCode && ACCESS_CODES[savedCode]) {
-            // They have a valid saved code, let them in
-            setAccessCode(savedCode);
-            setUserInfo(ACCESS_CODES[savedCode]);
-            setIsAuthorized(true);
+  /**
+   * Load saved access code from localStorage on mount
+   */
+  useEffect(() => {
+    const savedCode = localStorage.getItem('orb_access_code');
+    if (savedCode) {
+      setAccessCode(savedCode);
+      fetchAccessStatus(savedCode);
+    } else {
+      // Default to 'anonymous' if no code is set
+      setAccessCode('anonymous');
+      fetchAccessStatus('anonymous');
+    }
+  }, []);
+
+  /**
+   * Fetch access code status from backend
+   */
+  const fetchAccessStatus = async (code) => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/access/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ access_code: code })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setStatus({
+            limit: data.limit,
+            used: data.used,
+            remaining: data.remaining,
+            resets_at: data.resets_at,
+            masked_code: data.access_code
+          });
         }
-    }, []); // Empty array means this only runs once when component loads
+      } else {
+        // If backend fails, show default status
+        setStatus({
+          limit: 10,
+          used: 0,
+          remaining: 10,
+          resets_at: Date.now() / 1000 + 86400,
+          masked_code: '***'
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching access status:', error);
+      // Show default status on error
+      setStatus({
+        limit: 10,
+        used: 0,
+        remaining: 10,
+        resets_at: Date.now() / 1000 + 86400,
+        masked_code: '***'
+      });
+    }
+  };
 
-    /**
-     * Handle the form submission when user enters an access code
-     */
-    const handleSubmit = (e) => {
-        e.preventDefault(); // Prevent page reload
-        
-        // Clean up the input (remove spaces, make uppercase)
-        const code = inputValue.trim().toUpperCase();
-        
-        // Check if this code exists in our ACCESS_CODES object
-        if (ACCESS_CODES[code]) {
-            // Valid code! Save it and grant access
-            localStorage.setItem('orb_access_code', code);
-            setAccessCode(code);
-            setUserInfo(ACCESS_CODES[code]);
-            setIsAuthorized(true);
-            setError(''); // Clear any errors
-        } else {
-            // Invalid code, show error
-            setError('Invalid access code. Please check and try again.');
-            setInputValue(''); // Clear the input
-        }
-    };
+  /**
+   * Handle submitting a new access code
+   */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    /**
-     * Handle logout - clears the saved code and kicks them back
-     * to the access code entry screen
-     */
-    const handleLogout = () => {
-        localStorage.removeItem('orb_access_code');
-        setIsAuthorized(false);
-        setAccessCode('');
-        setUserInfo(null);
-        setInputValue('');
-        setError('');
-    };
-
-    /**
-     * If user hasn't entered a valid code yet, show the
-     * access code entry screen instead of your app
-     */
-    if (!isAuthorized) {
-        return (
-            <div className="min-h-screen bg-black flex items-center justify-center p-4">
-                <div className="max-w-md w-full">
-                    <div className="border-2 border-green-400 rounded-lg p-8 bg-black/50 backdrop-blur">
-                        {/* Logo and Title */}
-                        <div className="flex items-center gap-3 mb-6">
-                            <Brain className="w-10 h-10 text-purple-400" />
-                            <div>
-                                <h1 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-cyan-400 bg-clip-text text-transparent">
-                                    ORB TERMINAL
-                                </h1>
-                                <p className="text-xs text-green-400/60">
-                                    Onchain Research & Behavior Analytics
-                                </p>
-                            </div>
-                        </div>
-                        
-                        {/* Access Required Message */}
-                        <div className="bg-yellow-400/10 border border-yellow-400/30 rounded p-3 mb-6">
-                            <p className="text-yellow-400 text-sm">
-                                🔒 This terminal requires an access code
-                            </p>
-                        </div>
-
-                        {/* Access Code Entry Form */}
-                        <form onSubmit={handleSubmit}>
-                            <label className="block text-sm text-green-400 mb-2 font-bold">
-                                Enter Your Access Code
-                            </label>
-                            <input
-                                type="text"
-                                value={inputValue}
-                                onChange={(e) => setInputValue(e.target.value)}
-                                placeholder="XXXX-XXXX-X"
-                                className="w-full bg-black border-2 border-green-400/30 rounded px-4 py-3 text-green-400 placeholder-green-400/30 focus:border-green-400 focus:outline-none mb-4 font-mono uppercase"
-                                autoFocus
-                            />
-                            
-                            {/* Error Message */}
-                            {error && (
-                                <div className="mb-4 text-red-400 text-sm">
-                                    ⚠️ {error}
-                                </div>
-                            )}
-                            
-                            {/* Submit Button */}
-                            <button
-                                type="submit"
-                                className="w-full bg-green-400 text-black font-bold py-3 rounded hover:bg-green-300 transition-all shadow-[0_0_15px_rgba(74,222,128,0.3)]"
-                            >
-                                ACCESS TERMINAL
-                            </button>
-                        </form>
-                        
-                        {/* Help Text */}
-                        <div className="mt-6 pt-6 border-t border-green-400/20">
-                            <p className="text-xs text-green-400/60 text-center">
-                                Need an access code? Contact the administrator
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+    const code = inputValue.trim();
+    if (!code) {
+      setError('Please enter an access code');
+      return;
     }
 
-    /**
-     * If user IS authorized (has valid code), show your actual app
-     * with a small info bar at the top showing who they are
-     */
-    return (
-        <div>
-            {/* Info bar at the top showing user info and logout */}
-            <div className="bg-black/90 border-b border-green-400/30 px-4 py-2 flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                    <div className="text-xs">
-                        <span className="text-green-400/60">Access Code:</span>{' '}
-                        <span className="text-green-400 font-bold font-mono">{accessCode}</span>
-                    </div>
-                    <div className="text-xs">
-                        <span className="text-green-400/60">User:</span>{' '}
-                        <span className="text-cyan-400 font-bold">{userInfo.name}</span>
-                    </div>
-                    <div className="text-xs">
-                        <span className="text-green-400/60">Daily Limit:</span>{' '}
-                        <span className="text-yellow-400 font-bold">{userInfo.limit} analyses</span>
-                    </div>
-                </div>
-                <button
-                    onClick={handleLogout}
-                    className="text-xs text-red-400 hover:text-red-300 transition px-3 py-1 border border-red-400/30 rounded"
-                >
-                    LOGOUT
-                </button>
-            </div>
-            
-            {/* This is where your actual app (Terminal, Marketplace) appears */}
-            {children}
+    setLoading(true);
+    setError('');
+
+    try {
+      // Validate the code with the backend
+      const response = await fetch(`${BACKEND_URL}/api/access/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ access_code: code })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          // Valid code! Save it
+          localStorage.setItem('orb_access_code', code);
+          setAccessCode(code);
+          setStatus({
+            limit: data.limit,
+            used: data.used,
+            remaining: data.remaining,
+            resets_at: data.resets_at,
+            masked_code: data.access_code
+          });
+          setShowModal(false);
+          setInputValue('');
+          setError('');
+        } else {
+          setError('Invalid access code');
+        }
+      } else {
+        setError('Unable to validate access code');
+      }
+    } catch (error) {
+      console.error('Error validating access code:', error);
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Remove access code (revert to anonymous)
+   */
+  const handleRemoveCode = () => {
+    localStorage.removeItem('orb_access_code');
+    setAccessCode('anonymous');
+    setInputValue('');
+    setShowModal(false);
+    fetchAccessStatus('anonymous');
+  };
+
+  /**
+   * Refresh status
+   */
+  const handleRefreshStatus = () => {
+    fetchAccessStatus(accessCode);
+  };
+
+  /**
+   * Format reset time
+   */
+  const formatResetTime = (timestamp) => {
+    if (!timestamp) return 'Unknown';
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleString();
+  };
+
+  /**
+   * Get color for remaining analyses
+   */
+  const getRemainingColor = () => {
+    if (!status) return 'text-green-400';
+    const percentage = (status.remaining / status.limit) * 100;
+    if (percentage > 50) return 'text-green-400';
+    if (percentage > 20) return 'text-yellow-400';
+    return 'text-red-400';
+  };
+
+  return (
+    <div>
+      {/* Status bar at the top */}
+      <div className="bg-black/90 border-b border-green-400/30 px-4 py-2 flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          <div className="text-xs">
+            <span className="text-green-400/60">Access Code:</span>{' '}
+            <span className="text-green-400 font-bold font-mono">
+              {status?.masked_code || '***'}
+            </span>
+          </div>
+          {status && (
+            <>
+              <div className="text-xs">
+                <span className="text-green-400/60">Usage:</span>{' '}
+                <span className={`font-bold ${getRemainingColor()}`}>
+                  {status.used}/{status.limit}
+                </span>
+              </div>
+              <div className="text-xs">
+                <span className="text-green-400/60">Remaining:</span>{' '}
+                <span className={`font-bold ${getRemainingColor()}`}>
+                  {status.remaining}
+                </span>
+              </div>
+            </>
+          )}
         </div>
-    );
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleRefreshStatus}
+            className="text-xs text-cyan-400 hover:text-cyan-300 transition px-2 py-1 border border-cyan-400/30 rounded flex items-center gap-1"
+            title="Refresh status"
+          >
+            <RefreshCw className="w-3 h-3" />
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="text-xs text-green-400 hover:text-green-300 transition px-3 py-1 border border-green-400/30 rounded flex items-center gap-1"
+          >
+            <Key className="w-3 h-3" />
+            CHANGE CODE
+          </button>
+        </div>
+      </div>
+
+      {/* Main app content */}
+      {children}
+
+      {/* Access Code Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="max-w-md w-full bg-black border-2 border-green-400 rounded-lg p-6 relative">
+            {/* Close button */}
+            <button
+              onClick={() => setShowModal(false)}
+              className="absolute top-4 right-4 text-green-400/60 hover:text-green-400 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Modal header */}
+            <div className="flex items-center gap-3 mb-6">
+              <Key className="w-8 h-8 text-purple-400" />
+              <div>
+                <h2 className="text-xl font-bold text-green-400">
+                  Access Code
+                </h2>
+                <p className="text-xs text-green-400/60">
+                  Enter your code to increase your analysis limit
+                </p>
+              </div>
+            </div>
+
+            {/* Current status */}
+            {status && (
+              <div className="bg-green-400/10 border border-green-400/30 rounded p-4 mb-6">
+                <div className="text-sm mb-2">
+                  <span className="text-green-400/60">Current Code:</span>{' '}
+                  <span className="text-green-400 font-bold font-mono">
+                    {status.masked_code}
+                  </span>
+                </div>
+                <div className="text-sm mb-2">
+                  <span className="text-green-400/60">Daily Limit:</span>{' '}
+                  <span className="text-yellow-400 font-bold">
+                    {status.limit} analyses
+                  </span>
+                </div>
+                <div className="text-sm mb-2">
+                  <span className="text-green-400/60">Used Today:</span>{' '}
+                  <span className={`font-bold ${getRemainingColor()}`}>
+                    {status.used}/{status.limit}
+                  </span>
+                </div>
+                <div className="text-sm">
+                  <span className="text-green-400/60">Resets:</span>{' '}
+                  <span className="text-cyan-400 text-xs">
+                    {formatResetTime(status.resets_at)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Info box */}
+            <div className="bg-cyan-400/10 border border-cyan-400/30 rounded p-3 mb-6 flex gap-2">
+              <Info className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
+              <div className="text-xs text-cyan-400">
+                <p className="mb-2">
+                  <strong>Default:</strong> 10 analyses/day (anonymous)
+                </p>
+                <p>
+                  <strong>Admin Code:</strong> Up to 1000 analyses/day
+                </p>
+              </div>
+            </div>
+
+            {/* Access code input form */}
+            <form onSubmit={handleSubmit}>
+              <label className="block text-sm text-green-400 mb-2 font-bold">
+                Enter New Access Code
+              </label>
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="YOUR-ACCESS-CODE"
+                className="w-full bg-black border-2 border-green-400/30 rounded px-4 py-3 text-green-400 placeholder-green-400/30 focus:border-green-400 focus:outline-none mb-4 font-mono uppercase"
+                disabled={loading}
+              />
+
+              {/* Error message */}
+              {error && (
+                <div className="mb-4 text-red-400 text-sm bg-red-400/10 border border-red-400/30 rounded p-2">
+                  ⚠️ {error}
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 bg-green-400 text-black font-bold py-3 rounded hover:bg-green-300 transition-all shadow-[0_0_15px_rgba(74,222,128,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'VALIDATING...' : 'UPDATE CODE'}
+                </button>
+                {accessCode !== 'anonymous' && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveCode}
+                    className="px-4 py-3 border-2 border-red-400/30 text-red-400 rounded hover:bg-red-400/10 transition"
+                  >
+                    REMOVE
+                  </button>
+                )}
+              </div>
+            </form>
+
+            {/* Help text */}
+            <div className="mt-6 pt-6 border-t border-green-400/20">
+              <p className="text-xs text-green-400/60 text-center">
+                Contact the administrator to request an access code
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
