@@ -233,38 +233,18 @@ function Terminal() {
           const walletsToAnalyze = holderData.slice(0, 30);
           setAnalysisProgress({ current: 0, total: walletsToAnalyze.length });
 
-          const liquidityPools = [];
-          const normalWallets = [];
-          
-          walletsToAnalyze.forEach(holder => {
-            const holdingPercent = parseFloat((holder.amount / totalSupply * 100).toFixed(2));
-            if (holdingPercent >= 25) {
-              liquidityPools.push({
-                address: holder.address,
-                iq: 0,
-                winRate: '0.0',
-                trades: 0,
-                portfolio: 0,
-                pattern: 'LIQUIDITY POOL',
-                holdScore: 0,
-                holdingAmount: holder.amount.toFixed(0),
-                holdingPercent: holdingPercent.toFixed(2),
-                firstBuyTime: null
-              });
-            } else {
-              normalWallets.push(holder);
-            }
-          });
+          analyzedHolders = [];
 
-          analyzedHolders = [...liquidityPools];
-          
-          for (let i = 0; i < normalWallets.length; i++) {
+          for (let i = 0; i < walletsToAnalyze.length; i++) {
             if (signal.aborted) throw new Error('Scanning stopped');
-            
-            const holder = normalWallets[i];
-            const holdingPercent = (holder.amount / totalSupply * 100).toFixed(2);
-            
-            setAnalysisProgress({ current: i + 1, total: normalWallets.length });
+
+            const holder = walletsToAnalyze[i];
+            // Use backend-provided holdingPercent if available, otherwise calculate
+            const holdingPercent = holder.holdingPercent
+              ? holder.holdingPercent.toFixed(2)
+              : (holder.amount / totalSupply * 100).toFixed(2);
+
+            setAnalysisProgress({ current: i + 1, total: walletsToAnalyze.length });
             
             try {
               const walletData = await analyzeWalletViaBackend(
@@ -1193,6 +1173,7 @@ function Terminal() {
                     <th className="text-left p-3 text-xs text-green-400/60 font-bold">PATTERN</th>
                     <th className="text-right p-3 text-xs text-green-400/60 font-bold">WIN RATE</th>
                     <th className="text-right p-3 text-xs text-green-400/60 font-bold">TRADES</th>
+                    <th className="text-right p-3 text-xs text-green-400/60 font-bold">HOLD SCORE</th>
                     <th className="text-right p-3 text-xs text-green-400/60 font-bold">HOLDING</th>
                   </tr>
                 </thead>
@@ -1243,6 +1224,15 @@ function Terminal() {
                       </td>
                       <td className="p-3 text-right">
                         <span className="text-green-400">{wallet.trades}</span>
+                      </td>
+                      <td className="p-3 text-right">
+                        <span className={`font-bold ${
+                          wallet.holdScore >= 40 ? 'text-green-400' :
+                          wallet.holdScore >= 25 ? 'text-yellow-400' :
+                          'text-red-400'
+                        }`}>
+                          {wallet.holdScore}/50
+                        </span>
                       </td>
                       <td className="p-3 text-right">
                         <div>
