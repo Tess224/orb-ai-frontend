@@ -439,7 +439,22 @@ function Terminal() {
                   {privacyMode ? 'FUSION ANALYSIS' : 'WALLET ANALYSIS'}
                 </span>
                 <button
-                  onClick={() => setPrivacyMode(!privacyMode)}
+                  <button
+                  onClick={() => {
+                    const newMode = !privacyMode;
+                    setPrivacyMode(newMode);
+    
+    // Re-analyze if token exists and mode changed
+                    if (currentToken) {
+      // Clear previous results
+                      setWalletAnalysis([]);
+                      setFusedSignal(null);
+                      setCoinScore(null);
+      
+      // Re-trigger analysis in new mode
+                      analyzeToken(false); // false = don't force refresh cache
+                    }
+                  }}
                   className={`relative w-12 h-6 rounded-full transition-all ${
                     privacyMode ? 'bg-purple-400' : 'bg-green-400/30'
                   }`}
@@ -448,7 +463,7 @@ function Terminal() {
                     className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-black transition-transform ${
                       privacyMode ? 'translate-x-6' : 'translate-x-0'
                     }`}
-                  />
+                 />
                 </button>
               </div>
 
