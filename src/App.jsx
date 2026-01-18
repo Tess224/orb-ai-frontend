@@ -439,7 +439,6 @@ function Terminal() {
                   {privacyMode ? 'FUSION ANALYSIS' : 'WALLET ANALYSIS'}
                 </span>
                 <button
-                  <button
                   onClick={() => {
                     const newMode = !privacyMode;
                     setPrivacyMode(newMode);
