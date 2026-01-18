@@ -143,6 +143,7 @@ export const fetchTokenHolders = async (tokenAddress) => {
         return data.holders.map(holder => ({
           address: holder.address,           // Owner wallet address
           amount: holder.uiAmount || 0,      // Use uiAmount as the numeric value
+          holdingPercent: holder.holdingPercent,  // Backend-calculated percentage
           token_account: holder.token_account,
           decimals: holder.decimals,
           mint: holder.mint
@@ -186,7 +187,7 @@ export const getTokenSupply = async (tokenAddress) => {
     return supply / Math.pow(10, decimals);
   } catch (error) {
     console.error('Error fetching token supply:', error);
-    return 0;
+    return 0.000001;  // Small number to prevent division by zero (Infinity)
   }
 };
 
