@@ -137,6 +137,18 @@ export const fetchTokenHolders = async (tokenAddress) => {
 
     if (backendResponse.ok) {
       const data = await backendResponse.json();
+
+      // Transform backend response to match expected format
+      if (data.holders && Array.isArray(data.holders)) {
+        return data.holders.map(holder => ({
+          address: holder.address,           // Owner wallet address
+          amount: holder.uiAmount || 0,      // Use uiAmount as the numeric value
+          token_account: holder.token_account,
+          decimals: holder.decimals,
+          mint: holder.mint
+        }));
+      }
+
       return data.holders || data;
     }
   } catch (error) {
@@ -147,7 +159,7 @@ export const fetchTokenHolders = async (tokenAddress) => {
   try {
     const tokenMint = new PublicKey(tokenAddress);
     const largestAccounts = await connection.getTokenLargestAccounts(tokenMint);
-    
+
     return largestAccounts.value
       .filter(account => account.uiAmount && account.uiAmount > 0)
       .map(account => ({
