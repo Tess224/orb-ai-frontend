@@ -89,16 +89,63 @@ export const fetchTokenInfoBySymbol = async (query) => {
 };
 
 /**
+ * Fetches marketplace tokens from backend
+ * Uses the backend /marketplace/tokens endpoint
+ */
+export const fetchMarketplaceTokens = async (params = {}) => {
+  try {
+    const defaultParams = {
+      limit: 50,
+      sort_by: 'volume_24h',
+      sort_type: 'desc'
+    };
+
+    const queryParams = { ...defaultParams, ...params };
+    const queryString = new URLSearchParams(queryParams).toString();
+
+    const response = await fetch(`${BACKEND_URL}/marketplace/tokens?${queryString}`);
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to fetch marketplace tokens');
+    }
+
+    // Map backend response to frontend format
+    return data.tokens.map(token => ({
+      mint: token.address,
+      symbol: token.symbol,
+      name: token.name,
+      image_uri: token.logo || 'https://via.placeholder.com/50',
+      description: token.description || 'No description available',
+      market_cap: token.market_cap,
+      liquidity: token.liquidity,
+      is_graduated: token.is_graduated,
+      created_timestamp: token.created_at,
+      price: token.price,
+      price_change_24h: token.price_change_24h,
+      volume_24h: token.volume_24h,
+      holders: token.holders,
+      twitter: token.twitter,
+      complete: true
+    }));
+  } catch (error) {
+    console.error('Backend marketplace fetch error:', error);
+    throw error;
+  }
+};
+
+/**
  * Fetches trending/new tokens using DexScreener's latest profiles
+ * DEPRECATED: Use fetchMarketplaceTokens() instead
  */
 export const fetchPumpFunTrends = async () => {
   try {
     const response = await fetch('https://api.dexscreener.com/token-profiles/latest/v1');
     const data = await response.json();
-    
+
     // Filter for Solana tokens only
     const solanaTokens = data.filter(t => t.chainId === 'solana').slice(0, 50);
-    
+
     return solanaTokens.map(t => ({
       mint: t.tokenAddress,
       symbol: t.url?.split('/').pop() || t.tokenAddress.slice(0, 6),
