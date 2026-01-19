@@ -9,10 +9,10 @@ import {
   ChevronRight, Sparkles, ExternalLink, RefreshCw, Copy, Check, 
   TrendingDown, Minus 
 } from 'lucide-react';
-import { 
-  fetchTokenInfoByAddress, 
-  fetchTokenInfoBySymbol, 
-  fetchPumpFunTrends,
+import {
+  fetchTokenInfoByAddress,
+  fetchTokenInfoBySymbol,
+  fetchMarketplaceTokens,
   fetchTokenHolders,
   getTokenSupply,
   analyzeWalletViaBackend,
@@ -1327,15 +1327,15 @@ function Marketplace() {
     loadTrendingTokens();
     const interval = setInterval(loadTrendingTokens, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [sortBy]); // Reload when sort option changes
 
   const loadTrendingTokens = async (forceRefresh = false) => {
     if (forceRefresh) setRefreshing(true);
-    
+
     try {
-      const trendingCacheKey = getCacheKey('trending', 'dexscreener');
+      const trendingCacheKey = getCacheKey('marketplace', 'backend');
       const cachedTrending = !forceRefresh ? getCachedData(trendingCacheKey, 30000) : null;
-      
+
       if (cachedTrending) {
         setTokens(cachedTrending);
         setError('');
@@ -1344,23 +1344,22 @@ function Marketplace() {
         return;
       }
 
-      const trending = await fetchPumpFunTrends();
-      const sortedTokens = (trending || []).sort((a, b) => {
-        if (sortBy === 'time') {
-          return (b.created_timestamp || 0) - (a.created_timestamp || 0);
-        } else {
-          return (b.market_cap || 0) - (a.market_cap || 0);
-        }
+      // Fetch from backend marketplace API with limit of 50
+      const sortParam = sortBy === 'time' ? 'created_at' : 'market_cap';
+      const tokens = await fetchMarketplaceTokens({
+        limit: 50,
+        sort_by: sortParam,
+        sort_type: 'desc'
       });
 
-      setTokens(sortedTokens.slice(0, 50));
-      setCachedData(trendingCacheKey, sortedTokens.slice(0, 50));
+      setTokens(tokens);
+      setCachedData(trendingCacheKey, tokens);
       setError('');
     } catch (err) {
-      setError('Failed to load tokens');
-      console.error('Error loading trending tokens:', err);
+      setError('Failed to load tokens from backend');
+      console.error('Error loading marketplace tokens:', err);
     }
-    
+
     setLoading(false);
     setRefreshing(false);
   };
@@ -1384,14 +1383,8 @@ function Marketplace() {
     return `${Math.floor(diffHours / 24)}d ago`;
   };
 
-  const sortedTokens = [...tokens].sort((a, b) => {
-    if (sortBy === 'time') {
-      return (b.created_timestamp || 0) - (a.created_timestamp || 0);
-    } else if (sortBy === 'mcap') {
-      return (b.market_cap || 0) - (a.market_cap || 0);
-    }
-    return 0;
-  });
+  // Tokens are already sorted by backend, no need for client-side sorting
+  const sortedTokens = tokens;
 
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono p-4">
