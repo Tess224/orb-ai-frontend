@@ -1,0 +1,37 @@
+<svg width="192" height="192" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="96" cy="96" r="96" fill="#1a4d2e"/>
+
+  <!-- Brain-like ORB icon -->
+  <g transform="translate(48, 48)">
+    <!-- Left hemisphere -->
+    <path d="M 48 10 Q 20 10 20 40 Q 20 70 48 70"
+          fill="none" stroke="#4ade80" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 48 20 Q 30 20 30 40 Q 30 60 48 60"
+          fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Right hemisphere -->
+    <path d="M 48 10 Q 76 10 76 40 Q 76 70 48 70"
+          fill="none" stroke="#4ade80" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 48 20 Q 66 20 66 40 Q 66 60 48 60"
+          fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Center connection -->
+    <line x1="48" y1="10" x2="48" y2="70"
+          stroke="#4ade80" stroke-width="2"/>
+
+    <!-- Neural pathways -->
+    <circle cx="38" cy="35" r="2" fill="#4ade80"/>
+    <circle cx="58" cy="35" r="2" fill="#4ade80"/>
+    <circle cx="48" cy="25" r="2" fill="#4ade80"/>
+    <circle cx="48" cy="45" r="2" fill="#4ade80"/>
+
+    <!-- Bottom curves -->
+    <path d="M 30 70 Q 48 85 66 70"
+          fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- ORB text -->
+  <text x="96" y="160" font-family="Arial, sans-serif" font-size="20"
+        font-weight="bold" fill="#4ade80" text-anchor="middle">ORB</text>
+</svg>
